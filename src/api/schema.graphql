@@ -1,0 +1,3123 @@
+schema {
+  query: Query
+}
+
+interface Event {
+  name: String!
+  startTime: DateTime!
+  endTime: DateTime
+}
+
+interface SearchContent {
+  "Id of the content"
+  id: ID!
+  name: String
+}
+
+interface TomeOfKnowledgeAchievementReward {
+  id: ID!
+}
+
+type Ability implements SearchContent {
+  id: ID!
+  name: String @cost(weight: "10") @deprecated(reason: "Use 'info' field instead.")
+  iconUrl: String! @cost(weight: "10") @deprecated(reason: "Use 'info' field instead.")
+  description: String @cost(weight: "10")
+  info: AbilityInfo! @cost(weight: "10")
+  abilityType: AbilityType! @cost(weight: "10") @deprecated(reason: "Use 'info' field instead.")
+  specialization: Byte! @cost(weight: "10") @deprecated(reason: "Use 'info' field instead.")
+  actionPointCost: Byte! @cost(weight: "10") @deprecated(reason: "Use 'info' field instead.")
+  moraleLevel: Byte! @cost(weight: "10") @deprecated(reason: "Use 'info' field instead.")
+  moraleCost: UnsignedShort! @cost(weight: "10") @deprecated(reason: "Use 'info' field instead.")
+  castTime: UnsignedInt! @cost(weight: "10") @deprecated(reason: "Use 'info' field instead.")
+  range: UnsignedShort! @cost(weight: "10") @deprecated(reason: "Use 'info' field instead.")
+  minRange: UnsignedShort! @cost(weight: "10") @deprecated(reason: "Use 'info' field instead.")
+  minLevel: Byte! @cost(weight: "10") @deprecated(reason: "Use 'info' field instead.")
+  cooldown: UnsignedInt! @cost(weight: "10") @deprecated(reason: "Use 'info' field instead.")
+  labels: [String]! @cost(weight: "10") @deprecated(reason: "Use 'info' field instead.")
+}
+
+type AbilityInfo implements SearchContent {
+  id: ID!
+  name: String
+  iconUrl: String! @cost(weight: "10")
+  description("Character stats" stats: CharacterStatsInput!): String @cost(weight: "10")
+  abilityType: AbilityType!
+  "Mastery path"
+  specialization: Byte!
+  actionPointCost: Byte!
+  moraleLevel: Byte!
+  moraleCost: UnsignedShort!
+  castTime: UnsignedInt!
+  range: UnsignedShort!
+  minRange: UnsignedShort!
+  minLevel: Byte!
+  cooldown: UnsignedInt!
+  labels: [String]! @cost(weight: "10")
+}
+
+"Holds information about one attacker in a kill"
+type Attacker {
+  "Level at the time of the kill"
+  level: Byte!
+  "Renown rank at the time of the kill"
+  renownRank: Byte!
+  "Amount of the total damage done by this attacker"
+  damagePercent: Byte!
+  "Character information"
+  character: Character! @cost(weight: "10")
+  "Guild at the time of the kill"
+  guild: Guild @cost(weight: "10")
+}
+
+type Chapter implements SearchContent {
+  id: ID!
+  name: String
+  rank: UnsignedInt!
+  position: Position! @cost(weight: "10")
+  influenceRewards: [ChapterInfluenceReward!]! @cost(weight: "10")
+}
+
+type ChapterInfluenceReward {
+  tier: Byte!
+  realm: Realm!
+  item: Item! @cost(weight: "10")
+  count: UnsignedShort!
+}
+
+"A connection to a list of items."
+type ChaptersConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [ChaptersEdge!]
+  "A flattened list of the nodes."
+  nodes: [Chapter!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type ChaptersEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: Chapter!
+}
+
+"Info about a character"
+type Character implements SearchContent {
+  "Character Id"
+  id: ID!
+  "First name"
+  name: String!
+  "Current Level"
+  level: Byte!
+  "Current Renown Rank"
+  renownRank: Byte!
+  "Career\/Class of the character"
+  career: Career!
+  "Current Guild membership"
+  guildMembership: GuildMember @cost(weight: "10")
+  "Items equipped by the character"
+  items: [CharacterItem!]! @cost(weight: "10")
+  "Scenario ratings for the character"
+  ratings: [CharacterRating!]! @cost(weight: "10")
+}
+
+type CharacterItem {
+  "Slot where the item is equipped"
+  equipSlot: EquipSlot! @cost(weight: "10")
+  "Item info"
+  item: Item! @cost(weight: "10")
+  talismans: [Item!]! @cost(weight: "10")
+}
+
+"Info about a quest objective"
+type CharacterRating {
+  "Character information"
+  character: Character! @cost(weight: "10")
+  "Season ID"
+  seasonId: ID!
+  "Rating type"
+  ratingType: RatingType!
+  "Mu"
+  mu: Float!
+  "Sigma"
+  sigma: Float!
+  rating: Float! @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type CharacterRatingsConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [CharacterRatingsEdge!]
+  "A flattened list of the nodes."
+  nodes: [CharacterRating!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type CharacterRatingsEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: CharacterRating!
+}
+
+"A connection to a list of items."
+type CharactersConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [CharactersEdge!]
+  "A flattened list of the nodes."
+  nodes: [Character!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type CharactersEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: Character!
+}
+
+type CitySiegeEvent implements Event {
+  name: String!
+  startTime: DateTime!
+  endTime: DateTime
+}
+
+type Creature implements SearchContent {
+  id: ID!
+  name: String!
+  creatureType: CreatureType!
+  creatureSubType: CreatureSubType!
+  realm: Realm @cost(weight: "10")
+  modelName: String! @cost(weight: "10")
+  spawns: [CreatureSpawn!]! @cost(weight: "10")
+  questsStarter: [Quest!]! @cost(weight: "10")
+  questsFinisher: [Quest!]! @cost(weight: "10")
+  "Items sold by this creature"
+  vendorItems("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String): VendorItemsConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+}
+
+type CreatureSpawn {
+  id: ID!
+  "Position Info"
+  position: Position! @cost(weight: "10")
+  "Zone Info"
+  zone: Zone! @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type CreaturesConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [CreaturesEdge!]
+  "A flattened list of the nodes."
+  nodes: [Creature!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type CreaturesEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: Creature!
+}
+
+"A connection to a list of items."
+type DropsFromCreaturesConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [DropsFromCreaturesEdge!]
+  "A flattened list of the nodes."
+  nodes: [Creature!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type DropsFromCreaturesEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: Creature!
+}
+
+"A connection to a list of items."
+type DropsFromGameObjectsConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [DropsFromGameObjectsEdge!]
+  "A flattened list of the nodes."
+  nodes: [GameObject!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type DropsFromGameObjectsEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: GameObject!
+}
+
+type GameObject {
+  id: ID!
+  "The name of the Game Object"
+  name: String!
+  modelName: String @cost(weight: "10")
+  spawns: [GameObjectSpawn!]! @cost(weight: "10")
+  questsStarter: [Quest!]! @cost(weight: "10")
+  questsFinisher: [Quest!]! @cost(weight: "10")
+}
+
+type GameObjectSpawn {
+  id: ID!
+  "Position Info"
+  position: Position! @cost(weight: "10")
+  "Zone Info"
+  zone: Zone! @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type GameObjectsConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [GameObjectsEdge!]
+  "A flattened list of the nodes."
+  nodes: [GameObject!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type GameObjectsEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: GameObject!
+}
+
+type Guild implements SearchContent {
+  "Guild Id"
+  id: ID!
+  "Guild name"
+  name: String!
+  "Recruiting brief description"
+  briefDescription: String!
+  "Recruiting description"
+  description: String!
+  "Guild realm"
+  realm: Realm!
+  "Guild level"
+  level: Byte!
+  "Guild heraldry"
+  heraldry: GuildHeraldry! @cost(weight: "10")
+  "Guild leader"
+  leader: Character @cost(weight: "10")
+  "Guild ranks"
+  ranks: [GuildRank!]! @cost(weight: "10")
+  "Guild members"
+  members("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String): MembersConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+}
+
+type GuildHeraldry {
+  "Emblem"
+  emblem: Int!
+  "Pattern"
+  pattern: Int!
+  "Primary Color"
+  color1: Int!
+  "Secondary Color"
+  color2: Int!
+  "Shape"
+  shape: Int!
+}
+
+type GuildMember {
+  "Guild"
+  guild: Guild! @cost(weight: "10")
+  "Guild rank"
+  rank: GuildRank! @cost(weight: "10")
+  "Character info"
+  character: Character! @cost(weight: "10")
+}
+
+type GuildRank {
+  "Rank id"
+  rank: Byte!
+  "Rank name"
+  name: String!
+}
+
+"A connection to a list of items."
+type GuildsConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [GuildsEdge!]
+  "A flattened list of the nodes."
+  nodes: [Guild!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type GuildsEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: Guild!
+}
+
+type Icon {
+  "Icon Id"
+  id: ID!
+  "Name"
+  name: String!
+  "URL to image file"
+  url: String @cost(weight: "10")
+}
+
+type Instance {
+  "Id"
+  id: ID!
+  "Name"
+  name: String!
+  "Encounters"
+  encounters: [InstanceEncounter] @cost(weight: "10")
+  "Zone information"
+  zone: Zone! @cost(weight: "10")
+}
+
+type InstanceEncounter {
+  "Id"
+  id: ID!
+  "Name"
+  name: String!
+}
+
+type InstanceEncounterRun {
+  "The unique id of the run"
+  id: ID!
+  "The Id of the instance"
+  instanceId: ID!
+  "The Id of the encounter"
+  encounterId: ID!
+  "Start time of the run"
+  start: Long!
+  "End time of the run"
+  end: Long!
+  "If the encounter was completed"
+  completed: Boolean!
+  "The Id of the instance run"
+  instanceRunId: ID!
+  "Total deaths during the run"
+  deaths: Int! @cost(weight: "10")
+  "Duration of the run in seconds"
+  duration: Int! @cost(weight: "10")
+  "Scoreboard entries"
+  scoreboardEntries: [InstanceEncounterRunScoreboardEntry!]!
+  "Encounter info"
+  encounter: InstanceEncounter @cost(weight: "10")
+  "Instance information"
+  instance: Instance! @cost(weight: "10")
+}
+
+type InstanceEncounterRunScoreboardEntry {
+  "Level at the time of the run"
+  level: Byte!
+  "Renown rank at the time of the run"
+  renownRank: Byte!
+  "Career at the time of the run"
+  career: Career!
+  "Archetype at the time of the run"
+  archetype: Archetype!
+  "Total item rating"
+  itemRating: UnsignedInt!
+  "Damage Prevented"
+  protection: UnsignedInt!
+  "Deaths"
+  deaths: UnsignedInt!
+  "Damage"
+  damage: UnsignedInt!
+  "Healing"
+  healing: UnsignedInt!
+  "Damage contributing to kills"
+  killDamage: UnsignedInt!
+  "Healing of self"
+  healingSelf: UnsignedInt!
+  "Healing of others"
+  healingOthers: UnsignedInt!
+  "Protection of self"
+  protectionSelf: UnsignedInt!
+  "Protection of others"
+  protectionOthers: UnsignedInt!
+  "Damage Received"
+  damageReceived: UnsignedInt!
+  "Resurrections"
+  resurrectionsDone: UnsignedInt!
+  "Healing of self"
+  healingReceived: UnsignedInt!
+  "Protection Received"
+  protectionReceived: UnsignedInt!
+  "Character information"
+  character: Character! @cost(weight: "10")
+  "Guild at the time of the run"
+  guild: Guild @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type InstanceEncounterRunsConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [InstanceEncounterRunsEdge!]
+  "A flattened list of the nodes."
+  nodes: [InstanceEncounterRun!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+  "Average duration of all matching runs"
+  averageDuration: Float! @cost(weight: "10")
+  "Max duration of all matching runs"
+  maxDuration: Float! @cost(weight: "10")
+  "Min duration of all matching runs"
+  minDuration: Float! @cost(weight: "10")
+  "Median duration of all matching runs"
+  medianDuration: Float! @cost(weight: "10")
+  "Average deaths of all matching runs"
+  averageDeaths: Float! @cost(weight: "10")
+  "Median deaths of all matching runs"
+  medianDeaths: Int! @cost(weight: "10")
+  "Number of completed runs of all matching runs"
+  completedCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type InstanceEncounterRunsEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: InstanceEncounterRun!
+}
+
+type InstanceRun {
+  "The unique id of the run"
+  id: ID!
+  "The id of the instance"
+  instanceId: ID!
+  "Start time of the run"
+  start: Long!
+  "End time of the run"
+  end: Long!
+  "If all encounters have been completed"
+  completed: Boolean!
+  "Total deaths during the run"
+  deaths: Int! @cost(weight: "10")
+  "Duration of the run in seconds"
+  duration: Int! @cost(weight: "10")
+  "Scoreboard entries"
+  scoreboardEntries: [InstanceRunScoreboardEntry!]!
+  "Encounters"
+  encounters: [InstanceEncounterRun!]!
+  "Instance information"
+  instance: Instance! @cost(weight: "10")
+  "Zone information"
+  zone: Zone! @cost(weight: "10")
+}
+
+type InstanceRunScoreboardEntry {
+  "Level at the time of the run"
+  level: Byte!
+  "Renown rank at the time of the run"
+  renownRank: Byte!
+  "Career at the time of the run"
+  career: Career!
+  "Archetype at the time of the run"
+  archetype: Archetype!
+  "Total item rating"
+  itemRating: UnsignedInt!
+  "Damage Prevented"
+  protection: UnsignedInt!
+  "Deaths"
+  deaths: UnsignedInt!
+  "Damage"
+  damage: UnsignedInt!
+  "Healing"
+  healing: UnsignedInt!
+  "Damage contributing to kills"
+  killDamage: UnsignedInt!
+  "Healing of self"
+  healingSelf: UnsignedInt!
+  "Healing of others"
+  healingOthers: UnsignedInt!
+  "Protection of self"
+  protectionSelf: UnsignedInt!
+  "Protection of others"
+  protectionOthers: UnsignedInt!
+  "Damage Received"
+  damageReceived: UnsignedInt!
+  "Resurrections"
+  resurrectionsDone: UnsignedInt!
+  "Healing of self"
+  healingReceived: UnsignedInt!
+  "Protection Received"
+  protectionReceived: UnsignedInt!
+  "Character information"
+  character: Character! @cost(weight: "10")
+  "Guild at the time of the run"
+  guild: Guild @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type InstanceRunsConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [InstanceRunsEdge!]
+  "A flattened list of the nodes."
+  nodes: [InstanceRun!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+  "Average duration of all matching runs"
+  averageDuration: Float! @cost(weight: "10")
+  "Max duration of all matching runs"
+  maxDuration: Float! @cost(weight: "10")
+  "Min duration of all matching runs"
+  minDuration: Float! @cost(weight: "10")
+  "Median duration of all matching runs"
+  medianDuration: Float! @cost(weight: "10")
+  "Average deaths of all matching runs"
+  averageDeaths: Float! @cost(weight: "10")
+  "Median deaths of all matching runs"
+  medianDeaths: Int! @cost(weight: "10")
+  "Number of completed runs of all matching runs"
+  completedCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type InstanceRunsEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: InstanceRun!
+}
+
+"A connection to a list of items."
+type InstancesConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [InstancesEdge!]
+  "A flattened list of the nodes."
+  nodes: [Instance!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type InstancesEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: Instance!
+}
+
+type Item implements SearchContent {
+  "Id"
+  id: ID!
+  "Name"
+  name: String!
+  "Description"
+  description: String!
+  "Type"
+  type: ItemType!
+  "Character equipment slot"
+  slot: EquipSlot!
+  "Rarity level"
+  rarity: ItemRarity!
+  "Armor value, block rating on shields"
+  armor: UnsignedShort!
+  "Weapon DPS"
+  dps: UnsignedShort!
+  "Weapon speed"
+  speed: UnsignedShort!
+  "Level requirement"
+  levelRequirement: Byte!
+  "Renown rank requirement"
+  renownRankRequirement: Byte!
+  "Item level"
+  itemLevel: Byte!
+  "Unique equipped"
+  uniqueEquipped: Boolean!
+  stats: [ItemStat!]! @cost(weight: "10")
+  careerRestriction: [Career!]! @cost(weight: "10")
+  raceRestriction: [Race!]! @cost(weight: "10")
+  iconUrl: URL! @cost(weight: "10")
+  "Number of talisman slots"
+  talismanSlots: Byte!
+  itemSet: ItemSet @cost(weight: "10")
+  buffs: [Ability!]! @cost(weight: "10")
+  abilities: [Ability!]! @cost(weight: "10")
+  "Quests that reward this item"
+  rewardedFromQuests("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String): RewardedFromQuestsConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Chapters that reward this item"
+  rewardedFromChapters("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String): RewardedFromChaptersConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Vendors that sell this item"
+  soldByVendors("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String): SoldByVendorsConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Vendors that trade this item"
+  usedToPurchase("Usable by career" usableByCareer: Career "Usable by career" slot: EquipSlot "Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String): UsedToPurchaseConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Creatures that drop this item"
+  dropsFromCreatures("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String): DropsFromCreaturesConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Game Objects that drop this item"
+  dropsFromGameObjects("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String): DropsFromGameObjectsConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+}
+
+type ItemSet implements SearchContent {
+  id: ID!
+  level: Byte!
+  name: String!
+  items: [Item!]!
+  bonuses: [ItemSetBonus!]! @cost(weight: "10")
+}
+
+type ItemSetBonus {
+  itemsRequired: Byte!
+  bonus: ItemSetBonusValue! @cost(weight: "10")
+}
+
+type ItemStat {
+  "Stat"
+  stat: Stat!
+  "Value"
+  value: Short!
+  "Percentage"
+  percentage: Boolean!
+}
+
+"A connection to a list of items."
+type ItemsConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [ItemsEdge!]
+  "A flattened list of the nodes."
+  nodes: [Item!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type ItemsEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: Item!
+}
+
+type Kill {
+  "Kill Id"
+  id: ID!
+  "UTC Timestamp"
+  time: Int!
+  "ScenarioId, 0 if not in a scenario"
+  scenarioId: ID @deprecated
+  "Scenario, null if not in a scenario"
+  scenario: Scenario @cost(weight: "10")
+  "The total renown generated from the kill, including AAO modifiers"
+  totalRenown: UnsignedInt!
+  "Specifies the instance of a scenario this kill happened in"
+  instanceId: ID
+  "Scenario instance, null if not in a scenario"
+  instance: ScenarioRecord @cost(weight: "10")
+  "Position of the victim at the time of the kill"
+  position: Position! @cost(weight: "10")
+  "The victim"
+  victim: Victim! @cost(weight: "10")
+  "List of all enemy players contributing to the kill"
+  attackers: [Attacker!]! @cost(weight: "10")
+  "Scenario information"
+  scenarioRecord: ScenarioRecord @cost(weight: "10")
+  "Skirmish information"
+  skirmish: Skirmish @cost(weight: "10")
+  "Damage by attacker and source"
+  damage: [KillDamage!]! @cost(weight: "10")
+  "The player who landed the killing blow"
+  deathblow: Character @cost(weight: "10")
+}
+
+type KillDamage {
+  "Type of damage source"
+  damageType: KillDamageSourceType! @cost(weight: "10")
+  "Type of attacker"
+  attackerType: KillDamageAttackerType! @cost(weight: "10")
+  "The character doing the damage"
+  attacker: Character @cost(weight: "10")
+  "Ability information"
+  ability: AbilityInfo @cost(weight: "10")
+  "Damage amount"
+  damageAmount: UnsignedInt!
+}
+
+type KillGuildLeaderboardEntry {
+  "Rank"
+  rank: Int!
+  "Number of kills"
+  kills: Int!
+  "Number of deaths"
+  deaths: Int!
+  "Guild information"
+  guild: Guild! @cost(weight: "10")
+}
+
+type KillLeaderboardEntry {
+  "Rank"
+  rank: Int!
+  "Number of kills"
+  kills: Int!
+  "Number of deaths"
+  deaths: Int!
+  "Character information"
+  character: Character! @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type KillsConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [KillsEdge!]
+  "A flattened list of the nodes."
+  nodes: [Kill!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type KillsEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: Kill!
+}
+
+type KillsHeatmapPoint {
+  x: UnsignedInt!
+  y: UnsignedInt!
+  count: UnsignedInt!
+}
+
+"A connection to a list of items."
+type LeaderboardConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [LeaderboardEdge!]
+  "A flattened list of the nodes."
+  nodes: [RankedLeaderboardCharacter!]
+}
+
+"An edge in a connection."
+type LeaderboardEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: RankedLeaderboardCharacter!
+}
+
+type LiveEvent implements Event & SearchContent {
+  startTime: DateTime!
+  endTime: DateTime!
+  name: String!
+  "Id of the content"
+  id: ID!
+}
+
+type MapSetup {
+  "The unique id of the map setup"
+  id: ID!
+  "The SE corner X coordinate of the map"
+  seCornerX: Int!
+  "The SE corner Y coordinate of the map"
+  seCornerY: Int!
+  "The NW corner X coordinate of the map"
+  nwCornerX: Int!
+  "The NW corner Y coordinate of the map"
+  nwCornerY: Int!
+}
+
+"A connection to a list of items."
+type MembersConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [MembersEdge!]
+  "A flattened list of the nodes."
+  nodes: [GuildMember!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type MembersEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: GuildMember!
+}
+
+"Information about pagination in a connection."
+type PageInfo {
+  "Indicates whether more edges exist following the set defined by the clients arguments."
+  hasNextPage: Boolean!
+  "Indicates whether more edges exist prior the set defined by the clients arguments."
+  hasPreviousPage: Boolean!
+  "When paginating backwards, the cursor to continue."
+  startCursor: String
+  "When paginating forwards, the cursor to continue."
+  endCursor: String
+}
+
+type Position {
+  "ZoneId"
+  zoneId: UnsignedShort!
+  "Zone X position"
+  x: UnsignedShort!
+  "Zone Y position"
+  y: UnsignedShort!
+  "Z position"
+  z: UnsignedShort!
+  "Zone Info"
+  zone: Zone @cost(weight: "10")
+  "The map setup of the zone"
+  mapSetup: MapSetup @cost(weight: "10")
+}
+
+type PublicQuest implements SearchContent {
+  id: ID!
+  name: String
+  difficulty: PublicQuestDifficulty!
+  type: PublicQuestType!
+  position: Position! @cost(weight: "10")
+}
+
+type Query {
+  events: [Event!]! @cost(weight: "10")
+  "Get an ability by its ID."
+  ability("Ability Id" id: ID!): AbilityInfo @cost(weight: "10")
+  "Number of characters participating in one or more kills during the period"
+  activeCharactersStats("ISO datetime (ex 2008-09-18T00:00:00Z)" from: DateTime! "ISO datetime (ex 2008-09-18T00:00:00Z)" to: DateTime! "Career" career: Career "Min level" minLevel: Byte "Max level" maxLevel: Byte): NonNegativeInt @cost(weight: "10")
+  "Get one chapter"
+  chapter("Chapter Id" id: ID!): Chapter @cost(weight: "10")
+  "Query for chapters matching a filter"
+  chapters("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: ChapterFilterInput @cost(weight: "10") order: [ChapterSortInput!] @cost(weight: "10")): ChaptersConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Query for CharacterRatings matching a filter"
+  characterRatings("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: CharacterRatingFilterInput @cost(weight: "10") order: [CharacterRatingSortInput!] @cost(weight: "10")): CharacterRatingsConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Get one character"
+  character("Character Id" id: ID!): Character @cost(weight: "10")
+  "Query for characters matching a filter"
+  characters("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: CharacterFilterInput @cost(weight: "10") order: [CharacterSortInput!] @cost(weight: "10")): CharactersConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Get one creature"
+  creature("Creature Id" id: ID!): Creature @cost(weight: "10")
+  "Query for creatures matching a filter"
+  creatures("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: CreatureFilterInput @cost(weight: "10") order: [CreatureSortInput!] @cost(weight: "10")): CreaturesConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Get one game object"
+  gameObject("Game Object Id" id: ID!): GameObject @cost(weight: "10")
+  "Query for game objects matching a filter"
+  gameObjects("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: GameObjectProtoFilterInput @cost(weight: "10") order: [GameObjectProtoSortInput!] @cost(weight: "10")): GameObjectsConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Get one guild"
+  guild("Guild Id" id: ID!): Guild @cost(weight: "10")
+  "Query for guilds matching a filter"
+  guilds("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: GuildFilterInput @cost(weight: "10") order: [GuildInfoSortInput!] @cost(weight: "10")): GuildsConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Get information on an instance encounter run"
+  instanceEncounterRun("Instance Encounter Run Id" id: ID!): InstanceEncounterRun @cost(weight: "10")
+  "Query for instance encounter runs matching a filter"
+  instanceEncounterRuns("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: InstanceEncounterRunFilterInput @cost(weight: "10") order: [InstanceEncounterRunSortInput!] @cost(weight: "10")): InstanceEncounterRunsConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Get information on an instance"
+  instance("Instance Id" id: ID!): Instance @cost(weight: "10")
+  "Query for instances matching a filter"
+  instances("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: InstanceFilterInput @cost(weight: "10") order: [InstanceSortInput!] @cost(weight: "10")): InstancesConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Get information on an instance run"
+  instanceRun("Instance Run Id" id: ID!): InstanceRun @cost(weight: "10")
+  "Query for instance runs matching a filter"
+  instanceRuns("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: InstanceRunFilterInput @cost(weight: "10") order: [InstanceRunSortInput!] @cost(weight: "10")): InstanceRunsConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Get one item by Id"
+  item("Item Id" id: ID!): Item @cost(weight: "10")
+  "Query for items matching a filter"
+  items("Has stats" hasStats: [Stat!] "Usable by career" usableByCareer: Career "Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: ItemFilterInput @cost(weight: "10") order: [ItemSortInput!] @cost(weight: "10")): ItemsConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  weeklyGuildKillLeaderboard("Year" year: Int! "ISO week number" week: Int!): [KillGuildLeaderboardEntry!]! @cost(weight: "10")
+  monthlyGuildKillLeaderboard("Year" year: Int! "Month of year (1-12)" month: Int!): [KillGuildLeaderboardEntry!]! @cost(weight: "10")
+  weeklyKillLeaderboard("Year" year: Int! "ISO week number" week: Int!): [KillLeaderboardEntry!]! @cost(weight: "10")
+  monthlyKillLeaderboard("Year" year: Int! "Month of year (1-12)" month: Int!): [KillLeaderboardEntry!]! @cost(weight: "10")
+  "Get one kill"
+  kill("Kill Id" id: ID! "Include assists in the list of attackers" includeAssists: Boolean! = true): Kill @cost(weight: "10")
+  "Query for kills matching a filter"
+  kills("Include assists in the list of attackers" includeAssists: Boolean "From timestamp" from: Long @deprecated "To timestamp" to: Long @deprecated "Killer Character Id" killerId: ID @deprecated "Victim Character Id" victimId: ID @deprecated "Killer Guild Id" killerGuildId: ID @deprecated "Victim Guild Id" victimGuildId: ID @deprecated "Scenario Id" scenarioId: ID @deprecated "Zone Id" zoneId: ID @deprecated "Player Feud" playerFeudFilter: PlayerFeudFilterInput "Guild Feud" guildFeudFilter: GuildFeudFilterInput "Solo Kills only" soloOnly: Boolean! = false "Instance Id" instanceId: String "Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: KillFilterInput @cost(weight: "10")): KillsConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  killsHeatmap("Zone Id" zoneId: ID "From timestamp" from: Long "To timestamp" to: Long "Killer Character Id" killerId: ID "Victim Character Id" victimId: ID "Killer Guild Id" killerGuildId: ID "Victim Guild Id" victimGuildId: ID "Solo Kills only" soloOnly: Boolean! = false "Instance Id" instanceId: ID): [KillsHeatmapPoint!]! @cost(weight: "10")
+  "Get one guild"
+  quest("Quest Id" id: ID!): Quest @cost(weight: "10")
+  "Query for quests matching a filter"
+  quests("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: QuestFilterInput @cost(weight: "10") order: [QuestSortInput!] @cost(weight: "10")): QuestsConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  rankedSeasons: [RankedSeason!]! @cost(weight: "10")
+  rankedSeason("Season Id" id: ID): RankedSeason @cost(weight: "10")
+  "Get scenario result from instance id"
+  scenario("Scenario Id" id: ID!): ScenarioRecord @cost(weight: "10")
+  "Query for scenario records matching a filter"
+  scenarios("From timestamp" from: Long "To timestamp" to: Long "Character Id" characterId: ID "Guild Id" guildId: ID "Scenario Id" scenarioId: ID "Queue Type" queueType: ScenarioQueueType "Include only scenarios where character\/guild won or not" wins: Boolean "Include only scenarios where guild had 6+ members" premadeOnly: Boolean "Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: ScenarioRecordFilterInput @cost(weight: "10")): ScenariosConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Unified search"
+  search("Search query" query: String! "Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String): SearchConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Get one skirmish"
+  skirmish("Skirmish Id" id: ID!): Skirmish @cost(weight: "10")
+  "Query for skirmishes records matching a filter"
+  skirmishes("Character Id" characterId: ID "Guild Id" guildId: ID "Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: SkirmishFilterInput @cost(weight: "10")): SkirmishesConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Get top skirmishes in last seven days"
+  topSkirmishes: [Skirmish!]! @cost(weight: "10")
+  "Get one Tome of Knowledge Achievement entry by Id"
+  tomeOfKnowledgeAchievementEntry("Tome of Knowledge Achievement entry Id" id: ID!): TomeOfKnowledgeAchievementEntry @cost(weight: "10")
+  "Query for Tome of Knowledge Achievement entries matching a filter"
+  tomeOfKnowledgeAchievementEntries("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: TomeOfKnowledgeAchievementEntryFilterInput @cost(weight: "10")): TomeOfKnowledgeAchievementEntriesConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Get one Tome of Knowledge Achievement subtype by Id"
+  tomeOfKnowledgeAchievementSubType("Tome of Knowledge Achievement subtype Id" id: ID!): TomeOfKnowledgeAchievementType @cost(weight: "10")
+  "Query for Tome of Knowledge Achievement subtypes matching a filter"
+  tomeOfKnowledgeAchievementTypes: [TomeOfKnowledgeAchievementType!]! @cost(weight: "10")
+  "Get one Tome of Knowledge Achievement type by Id"
+  tomeOfKnowledgeAchievementType("Tome of Knowledge Achievement type Id" id: ID!): TomeOfKnowledgeAchievementType @cost(weight: "10")
+  "Get one Tome of Knowledge entry by Id"
+  tomeOfKnowledgeEntry("Tome of Knowledge entry Id" id: ID!): TomeOfKnowledgeEntry @cost(weight: "10")
+  "Query for Tome of Knowledge entries matching a filter"
+  tomeOfKnowledgeEntries("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: TomeOfKnowledgeEntryFilterInput @cost(weight: "10")): TomeOfKnowledgeEntriesConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Get one War Journal Entry by Id"
+  warJournalEntry("War Journal Entry Id" id: ID!): WarJournalEntry @cost(weight: "10")
+  "Query for War Journal entries matching a filter"
+  warJournalEntries(where: WarJournalEntryFilterInput @cost(weight: "10")): [WarJournalEntry] @cost(weight: "10")
+  "Get one War Journal Storyline by Id"
+  warJournalStoryline("War Journal Storyline Id" id: ID!): WarJournalStoryline @cost(weight: "10")
+  "Query for War Journal Storylines matching a filter"
+  warJournalStorylines(where: WarJournalStorylineFilterInput @cost(weight: "10")): [WarJournalStoryline!]! @cost(weight: "10")
+}
+
+"Info about a quest"
+type Quest implements SearchContent {
+  "Id of the quest"
+  id: ID!
+  "Name"
+  name: String!
+  "Quest Type"
+  type: QuestTypeFlagsFlags!
+  "Repeatable Type"
+  repeatableType: QuestRepeatableType!
+  "Available to races"
+  raceRestriction: [Race!]! @cost(weight: "10")
+  "Available to careers"
+  careerRestriction: [Career!]! @cost(weight: "10")
+  "Minimum level"
+  minLevel: Byte!
+  "Maximum level"
+  maxLevel: Byte!
+  "Minimum renown"
+  minRenown: Byte!
+  "Maximum renown"
+  maxRenown: Byte!
+  "Description"
+  description: String @cost(weight: "10")
+  "Journal Entry Text"
+  journalEntry: String @cost(weight: "10")
+  "XP Reward"
+  xp: UnsignedInt! @cost(weight: "10")
+  "Gold reward (in brass coins)"
+  gold: UnsignedInt! @cost(weight: "10")
+  "Number of choice rewards"
+  choiceCount: Byte!
+  "Choice rewards"
+  rewardsChoice: [QuestReward!]! @cost(weight: "10")
+  "Given rewards"
+  rewardsGiven: [QuestReward!]! @cost(weight: "10")
+  "Objectives"
+  objectives: [QuestObjective!]! @cost(weight: "10")
+  "Creatures starting quest"
+  starterCreatures: [Creature!]! @cost(weight: "10")
+}
+
+"Info about a quest objective"
+type QuestObjective {
+  "Objective description"
+  description: String!
+  "Number of times the objective needs to be done"
+  count: UnsignedInt!
+}
+
+"Info about a quest reward"
+type QuestReward {
+  "Number of items rewarded"
+  count: UnsignedShort!
+  "Item rewarded"
+  item: Item! @cost(weight: "10")
+}
+
+type QuestTypeFlagsFlags {
+  isNone: Boolean!
+  isGroup: Boolean!
+  isTravel: Boolean!
+  isTome: Boolean!
+  isRvR: Boolean!
+  isPlayerKill: Boolean!
+  isEpic: Boolean!
+}
+
+"A connection to a list of items."
+type QuestsConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [QuestsEdge!]
+  "A flattened list of the nodes."
+  nodes: [Quest!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type QuestsEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: Quest!
+}
+
+type RankedLeaderboardCharacter {
+  "Rating type"
+  ratingType: RankedLeaderboardRatingType!
+  "Season ID"
+  seasonId: UnsignedShort!
+  "Rank"
+  rank: UnsignedInt!
+  "Rating"
+  rating: UnsignedInt!
+  "Renown rank after last match in season"
+  renownRank: Byte!
+  "Wins"
+  wins: UnsignedInt!
+  "Draws"
+  draws: UnsignedInt!
+  "Losses"
+  losses: UnsignedInt!
+  "Matches needed"
+  matchesNeeded: UnsignedInt!
+  "Rank within career"
+  careerRank: UnsignedInt!
+  guild: Guild @cost(weight: "10")
+  character: Character! @cost(weight: "10")
+}
+
+type RankedSeason {
+  "Season ID"
+  id: ID!
+  "Season name"
+  name: String!
+  "Is main season or off season"
+  mainSeason: Boolean!
+  start: DateTime!
+  end: DateTime!
+  leaderboard("Leaderboard Type" type: RankedLeaderboardRatingType! "Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: CharacterSeasonStatsFilterInput @cost(weight: "10")): LeaderboardConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type RewardedFromChaptersConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [RewardedFromChaptersEdge!]
+  "A flattened list of the nodes."
+  nodes: [Chapter!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type RewardedFromChaptersEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: Chapter!
+}
+
+"A connection to a list of items."
+type RewardedFromQuestsConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [RewardedFromQuestsEdge!]
+  "A flattened list of the nodes."
+  nodes: [Quest!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type RewardedFromQuestsEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: Quest!
+}
+
+type Scenario implements SearchContent {
+  "The unique id of the scenario"
+  id: ID!
+  "The name of the scenario"
+  name: String!
+  "Zone information"
+  zone: Zone! @cost(weight: "10")
+}
+
+type ScenarioRecord {
+  "Scenario instance Id"
+  id: ID!
+  "Scenario Id"
+  scenarioId: ID!
+  "Scenario information"
+  scenario: Scenario! @cost(weight: "10")
+  "Points for each team, 0 is order, 1 is destruction"
+  points: [UnsignedInt]! @cost(weight: "10")
+  "Winning team, 0 is order, 1 is destruction"
+  winner: Byte!
+  "Scenario tier"
+  tier: Byte!
+  "Queue type"
+  queueType: Byte!
+  "The start time of the scenario"
+  startTime: Long!
+  "The end time of the scenario"
+  endTime: Long!
+  "Scoreboard entries"
+  scoreboardEntries: [ScenarioScoreboardEntry!]!
+  "The kills that occurred in the scenario"
+  kills: [Kill!]! @cost(weight: "10")
+  "The skirmishes that occurred in the scenario"
+  skirmishes: [Skirmish!]! @cost(weight: "10")
+}
+
+type ScenarioScoreboardEntry {
+  "The team of the player. Normally Order=0, Destruction=1."
+  team: Byte!
+  "Level at the time of the scenario"
+  level: Byte!
+  "Renown rank at the time of the scenario"
+  renownRank: Byte!
+  "If true the player left the scenario before it ended"
+  quitter: Boolean!
+  "Damage Prevented"
+  protection: UnsignedInt!
+  "Kills"
+  kills: UnsignedInt!
+  "Death blows"
+  deathBlows: UnsignedInt!
+  "Deaths"
+  deaths: UnsignedInt!
+  "Damage"
+  damage: UnsignedInt!
+  "Healing"
+  healing: UnsignedInt!
+  "Objective Score"
+  objectiveScore: UnsignedInt!
+  "Solo Kills"
+  killsSolo: UnsignedInt!
+  "Damage contributing to kills"
+  killDamage: UnsignedInt!
+  "Healing of self"
+  healingSelf: UnsignedInt!
+  "Healing of others"
+  healingOthers: UnsignedInt!
+  "Protection of self"
+  protectionSelf: UnsignedInt!
+  "Protection of others"
+  protectionOthers: UnsignedInt!
+  "Damage Received"
+  damageReceived: UnsignedInt!
+  "Resurrections"
+  resurrectionsDone: UnsignedInt!
+  "Healing of self"
+  healingReceived: UnsignedInt!
+  "Protection Received"
+  protectionReceived: UnsignedInt!
+  "Character information"
+  character: Character! @cost(weight: "10")
+  "Guild at the time of the scenario"
+  guild: Guild @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type ScenariosConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [ScenariosEdge!]
+  "A flattened list of the nodes."
+  nodes: [ScenarioRecord!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type ScenariosEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: ScenarioRecord!
+}
+
+"A connection to a list of items."
+type ScoreboardEntriesConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [ScoreboardEntriesEdge!]
+  "A flattened list of the nodes."
+  nodes: [SkirmishScoreboardEntry!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type ScoreboardEntriesEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: SkirmishScoreboardEntry!
+}
+
+"A connection to a list of items."
+type SearchConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [SearchEdge!]
+  "A flattened list of the nodes."
+  nodes: [SearchContent!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type SearchEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: SearchContent!
+}
+
+type Skirmish {
+  "Skirmish Id"
+  id: ID!
+  "UTC Timestamp of Skirmish start"
+  startTime: Long!
+  "UTC Timestamp of Skirmish end"
+  endTime: Long!
+  "Total number of kills that happened during this skirmish"
+  numberOfKills: Int!
+  "Total number of kills that happened during this skirmish for Order"
+  numberOfKillsOrder: Int!
+  "Total number of kills that happened during this skirmish for Destruction"
+  numberOfKillsDestruction: Int!
+  "Total number of players that participated in this skirmish"
+  numberOfPlayers: Int!
+  "Total number of order players that participated in this skirmish"
+  numberOfPlayersOrder: Int!
+  "Total number of destruction players that participated in this skirmish"
+  numberOfPlayersDestruction: Int!
+  "Scenario, null if not in a scenario"
+  scenario: Scenario @cost(weight: "10")
+  "Scenario instance, null if not in a scenario"
+  instance: ScenarioRecord @cost(weight: "10")
+  "Primary Zone Info"
+  primaryZone: Zone @cost(weight: "10")
+  "Primary Zone Area Info"
+  primaryZoneArea: ZoneArea @cost(weight: "10")
+  "Kills that happened during this skirmish"
+  kills("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String): KillsConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Scoreboard entries"
+  scoreboardEntries("Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String order: [SkirmishScoreboardEntrySortInput!] @cost(weight: "10")): ScoreboardEntriesConnection @listSize(assumedSize: 50, slicingArguments: [ "first", "last" ], slicingArgumentDefaultValue: 10, sizedFields: [ "edges", "nodes" ], requireOneSlicingArgument: false) @cost(weight: "10")
+  "Top guilds by players"
+  topGuildsByPlayers: [SkirmishTopGuild!]! @cost(weight: "10")
+  "Top guilds by kills"
+  topGuildsByKills: [SkirmishTopGuild!]! @cost(weight: "10")
+  "Heatmap of kills that happened during this skirmish primary zone"
+  heatmap: [KillsHeatmapPoint!]! @cost(weight: "10")
+  "Damage leading to player kills in this skirmish"
+  killDamage: [KillDamage!]! @cost(weight: "10")
+  "Damage leading to player kills in this skirmish from a specific character"
+  killDamageByCharacter("Character Id" id: ID!): [KillDamage!]! @cost(weight: "10")
+}
+
+type SkirmishScoreboardEntry {
+  "The realm of the player"
+  realm: Realm! @cost(weight: "10")
+  "Level at the time of the scenario"
+  level: Byte!
+  "Renown rank at the time of the scenario"
+  renownRank: Byte!
+  "If true the player left the scenario before it ended"
+  career: Career!
+  "Damage Prevented"
+  protection: UnsignedInt!
+  "Kills"
+  kills: UnsignedInt!
+  "Death blows"
+  deathBlows: UnsignedInt!
+  "Deaths"
+  deaths: UnsignedInt!
+  "Damage"
+  damage: UnsignedInt!
+  "Healing"
+  healing: UnsignedInt!
+  "Solo Kills"
+  killsSolo: UnsignedInt!
+  "Damage contributing to kills"
+  killDamage: UnsignedInt!
+  "Healing of self"
+  healingSelf: UnsignedInt!
+  "Healing of others"
+  healingOthers: UnsignedInt!
+  "Protection of self"
+  protectionSelf: UnsignedInt!
+  "Protection of others"
+  protectionOthers: UnsignedInt!
+  "Damage Received"
+  damageReceived: UnsignedInt!
+  "Resurrections"
+  resurrectionsDone: UnsignedInt!
+  "Healing of self"
+  healingReceived: UnsignedInt!
+  "Protection Received"
+  protectionReceived: UnsignedInt!
+  "Character information"
+  character: Character! @cost(weight: "10")
+  "Guild at the time of the scenario"
+  guild: Guild @cost(weight: "10")
+}
+
+type SkirmishTopGuild {
+  "Value"
+  count: Int!
+  "Guild information"
+  guild: Guild! @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type SkirmishesConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [SkirmishesEdge!]
+  "A flattened list of the nodes."
+  nodes: [Skirmish!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type SkirmishesEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: Skirmish!
+}
+
+"A connection to a list of items."
+type SoldByVendorsConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [SoldByVendorsEdge!]
+  "A flattened list of the nodes."
+  nodes: [VendorItem!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type SoldByVendorsEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: VendorItem!
+}
+
+"A connection to a list of items."
+type TomeOfKnowledgeAchievementEntriesConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [TomeOfKnowledgeAchievementEntriesEdge!]
+  "A flattened list of the nodes."
+  nodes: [TomeOfKnowledgeAchievementEntry!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type TomeOfKnowledgeAchievementEntriesEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: TomeOfKnowledgeAchievementEntry!
+}
+
+type TomeOfKnowledgeAchievementEntry {
+  id: ID!
+  name: String!
+  description: String!
+  subType: TomeOfKnowledgeAchievementSubType! @cost(weight: "10")
+  rewards: [TomeOfKnowledgeAchievementReward!]! @cost(weight: "10")
+}
+
+type TomeOfKnowledgeAchievementRewardActionCounter implements TomeOfKnowledgeAchievementReward {
+  id: ID!
+  "Ability Info"
+  ability: AbilityInfo! @cost(weight: "10")
+}
+
+type TomeOfKnowledgeAchievementRewardItem implements TomeOfKnowledgeAchievementReward {
+  id: ID!
+  "Item is automatically added to player inventory"
+  autoCreate: Boolean!
+  "Item info"
+  item: Item! @cost(weight: "10")
+}
+
+type TomeOfKnowledgeAchievementRewardTitle implements TomeOfKnowledgeAchievementReward {
+  id: ID!
+  "Tome of Knowledge entry"
+  title: TomeOfKnowledgeEntry! @cost(weight: "10")
+}
+
+type TomeOfKnowledgeAchievementSubType {
+  id: ID!
+  name: String!
+  description: String!
+  type: TomeOfKnowledgeAchievementType! @cost(weight: "10")
+  entries: [TomeOfKnowledgeAchievementEntry!]! @cost(weight: "10")
+}
+
+type TomeOfKnowledgeAchievementType {
+  id: ID!
+  name: String!
+  subTypes: [TomeOfKnowledgeAchievementSubType!]! @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type TomeOfKnowledgeEntriesConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [TomeOfKnowledgeEntriesEdge!]
+  "A flattened list of the nodes."
+  nodes: [TomeOfKnowledgeEntry!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type TomeOfKnowledgeEntriesEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: TomeOfKnowledgeEntry!
+}
+
+type TomeOfKnowledgeEntry implements SearchContent {
+  id: ID!
+  name: String!
+  description: String!
+  xp: UnsignedInt!
+  realm: Realm!
+}
+
+"A connection to a list of items."
+type UsedToPurchaseConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [UsedToPurchaseEdge!]
+  "A flattened list of the nodes."
+  nodes: [VendorItem!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type UsedToPurchaseEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: VendorItem!
+}
+
+type VendorItem {
+  creatures: [Creature!]! @cost(weight: "10")
+  item: Item! @cost(weight: "10")
+  soldBy: [Creature!]! @cost(weight: "10")
+  count: UnsignedShort!
+  "Cost in copper coins"
+  price: UnsignedInt!
+  requiredItems: [VendorItemRequiredItem!]! @cost(weight: "10")
+}
+
+type VendorItemRequiredItem {
+  item: Item! @cost(weight: "10")
+  "Amount needed"
+  count: UnsignedShort!
+}
+
+"A connection to a list of items."
+type VendorItemsConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [VendorItemsEdge!]
+  "A flattened list of the nodes."
+  nodes: [VendorItem!]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type VendorItemsEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: VendorItem!
+}
+
+"Holds information about one attacker in a kill"
+type Victim {
+  "Level at the time of the kill"
+  level: Byte!
+  "Renown rank at the time of the kill"
+  renownRank: Byte!
+  "Character information"
+  character: Character! @cost(weight: "10")
+  "Guild at the time of the kill"
+  guild: Guild @cost(weight: "10")
+}
+
+"Activities in a War Journal entry"
+type WarJournalActivity {
+  id: ID!
+  "Name of the activity"
+  name: String!
+  text: String!
+  activityType: String! @cost(weight: "10")
+  tasks: [WarJournalActivityTask!]! @cost(weight: "10")
+  zone: Zone @cost(weight: "10")
+}
+
+"Tasks in a War Journal activity"
+type WarJournalActivityTask {
+  name: String!
+  text: String!
+}
+
+"Entries in the War Journal"
+type WarJournalEntry {
+  id: ID!
+  name: String!
+  npcName: String
+  title: String
+  shortTitle: String
+  text: String
+  locationText: String
+  isRvR: Boolean!
+  storyline: WarJournalStoryline! @cost(weight: "10")
+  zone: Zone @cost(weight: "10")
+  area: ZoneArea @cost(weight: "10")
+  activities: [WarJournalActivity!]! @cost(weight: "10")
+  position: Position @cost(weight: "10")
+  influenceRewards: [ChapterInfluenceReward!]! @cost(weight: "10")
+}
+
+"Storylines in the War Journal"
+type WarJournalStoryline {
+  id: ID!
+  "Name of the storyline"
+  name: String!
+  summary: String!
+  entries: [WarJournalEntry!]! @cost(weight: "10")
+}
+
+type ZandriExpeditionEvent implements Event {
+  name: String!
+  startTime: DateTime!
+  endTime: DateTime
+}
+
+type Zone implements SearchContent {
+  "The unique id of the zone"
+  id: ID!
+  "The name of the zone"
+  name: String!
+  "The map setup of the zone"
+  mapSetup: MapSetup @cost(weight: "10")
+}
+
+type ZoneArea {
+  "The unique id of the zone area"
+  id: ID!
+  "Zone information"
+  zone: Zone! @cost(weight: "10")
+  "The name of the zone area"
+  name: String
+  "The map setup of the zone area"
+  mapSetup: MapSetup @cost(weight: "10")
+}
+
+union ItemSetBonusValue = Ability | ItemStat
+
+input BooleanOperationFilterInput {
+  eq: Boolean @cost(weight: "10")
+  neq: Boolean @cost(weight: "10")
+}
+
+input ByteOperationFilterInput {
+  eq: Byte @cost(weight: "10")
+  neq: Byte @cost(weight: "10")
+  in: [Byte] @cost(weight: "10")
+  nin: [Byte] @cost(weight: "10")
+  gt: Byte @cost(weight: "10")
+  ngt: Byte @cost(weight: "10")
+  gte: Byte @cost(weight: "10")
+  ngte: Byte @cost(weight: "10")
+  lt: Byte @cost(weight: "10")
+  nlt: Byte @cost(weight: "10")
+  lte: Byte @cost(weight: "10")
+  nlte: Byte @cost(weight: "10")
+}
+
+input CareerLineOperationFilterInput {
+  eq: Career @cost(weight: "10")
+  neq: Career @cost(weight: "10")
+  in: [Career!] @cost(weight: "10")
+  nin: [Career!] @cost(weight: "10")
+}
+
+input CareerMaskFlagsInput {
+  isIronbreaker: Boolean
+  isSlayer: Boolean
+  isRunePriest: Boolean
+  isEngineer: Boolean
+  isBlackOrc: Boolean
+  isChoppa: Boolean
+  isShaman: Boolean
+  isSquigHerder: Boolean
+  isWitchHunter: Boolean
+  isKnight: Boolean
+  isBrightWizard: Boolean
+  isWarriorPriest: Boolean
+  isChosen: Boolean
+  isMarauder: Boolean
+  isZealot: Boolean
+  isMagus: Boolean
+  isSwordMaster: Boolean
+  isShadowWarrior: Boolean
+  isWhiteLion: Boolean
+  isArchmage: Boolean
+  isBlackguard: Boolean
+  isWitchElf: Boolean
+  isDiscipleOfKhaine: Boolean
+  isSorcerer: Boolean
+}
+
+input CareerMaskOperationFilterInput {
+  eq: CareerMaskFlagsInput @cost(weight: "10")
+  neq: CareerMaskFlagsInput @cost(weight: "10")
+  in: [CareerMaskFlagsInput!] @cost(weight: "10")
+  nin: [CareerMaskFlagsInput!] @cost(weight: "10")
+}
+
+input ChapterFilterInput {
+  and: [ChapterFilterInput!]
+  or: [ChapterFilterInput!]
+  "Name"
+  name: StringOperationFilterInput
+  "Zone"
+  zoneId: UnsignedShortOperationFilterInputType
+  "Zone"
+  rank: UnsignedIntOperationFilterInputType
+}
+
+input ChapterSortInput {
+  id: SortEnumType @cost(weight: "10")
+  name: SortEnumType @cost(weight: "10")
+  rank: SortEnumType @cost(weight: "10")
+}
+
+input CharacterFilterInput {
+  and: [CharacterFilterInput!]
+  or: [CharacterFilterInput!]
+  "Character name"
+  name: StringOperationFilterInput
+  "Character career"
+  careerLine: CareerLineOperationFilterInput
+  "Character level"
+  level: ByteOperationFilterInput
+  "Character renown rank"
+  renownRank: ByteOperationFilterInput
+}
+
+input CharacterRatingFilterInput {
+  and: [CharacterRatingFilterInput!]
+  or: [CharacterRatingFilterInput!]
+  characterId: UnsignedIntOperationFilterInputType
+  seasonId: UnsignedShortOperationFilterInputType
+  ratingType: RatingTypeOperationFilterInput
+  sigma: FloatOperationFilterInput
+  mu: FloatOperationFilterInput
+}
+
+input CharacterRatingSortInput {
+  mu: SortEnumType @cost(weight: "10")
+  sigma: SortEnumType @cost(weight: "10")
+}
+
+input CharacterSeasonStatsFilterInput {
+  and: [CharacterSeasonStatsFilterInput!]
+  or: [CharacterSeasonStatsFilterInput!]
+}
+
+input CharacterSortInput {
+  level: SortEnumType @cost(weight: "10")
+  renownRank: SortEnumType @cost(weight: "10")
+  name: SortEnumType @cost(weight: "10")
+}
+
+input CharacterStatsInput {
+  "Ability Level"
+  level: Byte!
+  "Strength"
+  strength: Int!
+  "BallisticSkill"
+  ballisticSkill: Int!
+  "Intelligence"
+  intelligence: Int!
+  "Willpower"
+  willpower: Int!
+}
+
+input CreatureFilterInput {
+  and: [CreatureFilterInput!]
+  or: [CreatureFilterInput!]
+  "Name"
+  name: StringOperationFilterInput
+  "Sub Type"
+  creatureSubType: CreatureSubTypesOperationFilterInput
+  "Type"
+  creatureType: CreatureTypesOperationFilterInput
+}
+
+input CreatureSortInput {
+  id: SortEnumType @cost(weight: "10")
+  name: SortEnumType @cost(weight: "10")
+  creatureType: SortEnumType @cost(weight: "10")
+  creatureSubType: SortEnumType @cost(weight: "10")
+}
+
+input CreatureSubTypesOperationFilterInput {
+  eq: CreatureSubType @cost(weight: "10")
+  neq: CreatureSubType @cost(weight: "10")
+  in: [CreatureSubType!] @cost(weight: "10")
+  nin: [CreatureSubType!] @cost(weight: "10")
+}
+
+input CreatureTypesOperationFilterInput {
+  eq: CreatureType @cost(weight: "10")
+  neq: CreatureType @cost(weight: "10")
+  in: [CreatureType!] @cost(weight: "10")
+  nin: [CreatureType!] @cost(weight: "10")
+}
+
+input EquipSlotOperationFilterInput {
+  eq: EquipSlot @cost(weight: "10")
+  neq: EquipSlot @cost(weight: "10")
+  in: [EquipSlot!] @cost(weight: "10")
+  nin: [EquipSlot!] @cost(weight: "10")
+}
+
+input FloatOperationFilterInput {
+  eq: Float @cost(weight: "10")
+  neq: Float @cost(weight: "10")
+  in: [Float] @cost(weight: "10")
+  nin: [Float] @cost(weight: "10")
+  gt: Float @cost(weight: "10")
+  ngt: Float @cost(weight: "10")
+  gte: Float @cost(weight: "10")
+  ngte: Float @cost(weight: "10")
+  lt: Float @cost(weight: "10")
+  nlt: Float @cost(weight: "10")
+  lte: Float @cost(weight: "10")
+  nlte: Float @cost(weight: "10")
+}
+
+input GameObjectProtoFilterInput {
+  and: [GameObjectProtoFilterInput!]
+  or: [GameObjectProtoFilterInput!]
+  "Name"
+  name: StringOperationFilterInput
+}
+
+input GameObjectProtoSortInput {
+  id: SortEnumType @cost(weight: "10")
+  name: SortEnumType @cost(weight: "10")
+}
+
+input GuildFeudFilterInput {
+  guild1Id: ID!
+  guild2Id: ID!
+}
+
+input GuildFilterInput {
+  and: [GuildFilterInput!]
+  or: [GuildFilterInput!]
+  "Guild name"
+  name: StringOperationFilterInput
+  "Guild realm"
+  realm: RealmsOperationFilterInput
+  "Guild level"
+  level: ByteOperationFilterInput
+}
+
+input GuildInfoSortInput {
+  level: SortEnumType @cost(weight: "10")
+  name: SortEnumType @cost(weight: "10")
+}
+
+input InstanceEncounterRunFilterInput {
+  and: [InstanceEncounterRunFilterInput!]
+  or: [InstanceEncounterRunFilterInput!]
+  id: UnsignedLongOperationFilterInputType
+  start: LongOperationFilterInput
+  end: LongOperationFilterInput
+  instanceId: UnsignedShortOperationFilterInputType
+  encounterId: UnsignedIntOperationFilterInputType
+  completed: BooleanOperationFilterInput
+  scoreboardEntryCount: IntOperationFilterInput
+  totalDeaths: LongOperationFilterInput
+  minItemRating: UnsignedIntOperationFilterInputType
+  maxItemRating: UnsignedIntOperationFilterInputType
+  averageItemRating: FloatOperationFilterInput
+}
+
+input InstanceEncounterRunSortInput {
+  start: SortEnumType @cost(weight: "10")
+  end: SortEnumType @cost(weight: "10")
+}
+
+input InstanceFilterInput {
+  and: [InstanceFilterInput!]
+  or: [InstanceFilterInput!]
+  id: UnsignedShortOperationFilterInputType
+  name: StringOperationFilterInput
+}
+
+input InstanceRunFilterInput {
+  and: [InstanceRunFilterInput!]
+  or: [InstanceRunFilterInput!]
+  id: UuidOperationFilterInput
+  start: LongOperationFilterInput
+  end: LongOperationFilterInput
+  instanceId: UnsignedShortOperationFilterInputType
+  completed: BooleanOperationFilterInput
+  completedEncounters: IntOperationFilterInput
+  scoreboardEntryCount: IntOperationFilterInput
+  totalDeaths: LongOperationFilterInput
+  minItemRating: UnsignedIntOperationFilterInputType
+  maxItemRating: UnsignedIntOperationFilterInputType
+  averageItemRating: FloatOperationFilterInput
+}
+
+input InstanceRunSortInput {
+  start: SortEnumType @cost(weight: "10")
+  end: SortEnumType @cost(weight: "10")
+}
+
+input InstanceSortInput {
+  id: SortEnumType @cost(weight: "10")
+  name: SortEnumType @cost(weight: "10")
+}
+
+input IntOperationFilterInput {
+  eq: Int @cost(weight: "10")
+  neq: Int @cost(weight: "10")
+  in: [Int] @cost(weight: "10")
+  nin: [Int] @cost(weight: "10")
+  gt: Int @cost(weight: "10")
+  ngt: Int @cost(weight: "10")
+  gte: Int @cost(weight: "10")
+  ngte: Int @cost(weight: "10")
+  lt: Int @cost(weight: "10")
+  nlt: Int @cost(weight: "10")
+  lte: Int @cost(weight: "10")
+  nlte: Int @cost(weight: "10")
+}
+
+"Item filtering options"
+input ItemFilterInput {
+  and: [ItemFilterInput!]
+  or: [ItemFilterInput!]
+  "Item Id"
+  id: UnsignedIntOperationFilterInputType
+  "Name"
+  name: StringOperationFilterInput
+  "Description"
+  description: StringOperationFilterInput
+  "Type"
+  type: ItemTypeOperationFilterInput
+  "Character equipment slot"
+  slot: EquipSlotOperationFilterInput
+  "Rarity level"
+  rarity: ItemRarityOperationFilterInput
+  "Armor value, block rating on shields"
+  armor: UnsignedShortOperationFilterInputType
+  "Weapon DPS"
+  dps: UnsignedShortOperationFilterInputType
+  "Weapon speed"
+  speed: UnsignedShortOperationFilterInputType
+  "Level requirement"
+  levelRequirement: ByteOperationFilterInput
+  "Renown rank requirement"
+  renownRankRequirement: ByteOperationFilterInput
+  "Item level"
+  itemLevel: ByteOperationFilterInput
+  "Unique equipped"
+  uniqueEquipped: BooleanOperationFilterInput
+  "Number of talisman slots"
+  talismanSlots: ByteOperationFilterInput
+}
+
+input ItemRarityOperationFilterInput {
+  eq: ItemRarity @cost(weight: "10")
+  neq: ItemRarity @cost(weight: "10")
+  in: [ItemRarity!] @cost(weight: "10")
+  nin: [ItemRarity!] @cost(weight: "10")
+}
+
+"Item sorting options"
+input ItemSortInput {
+  "Item Id"
+  id: SortEnumType @cost(weight: "10")
+  "Name"
+  name: SortEnumType @cost(weight: "10")
+  "Description"
+  description: SortEnumType @cost(weight: "10")
+  "Type"
+  type: SortEnumType @cost(weight: "10")
+  "Character equipment slot"
+  slot: SortEnumType @cost(weight: "10")
+  "Rarity level"
+  rarity: SortEnumType @cost(weight: "10")
+  "Armor value, block rating on shields"
+  armor: SortEnumType @cost(weight: "10")
+  "Weapon DPS"
+  dps: SortEnumType @cost(weight: "10")
+  "Weapon speed"
+  speed: SortEnumType @cost(weight: "10")
+  "Level requirement"
+  levelRequirement: SortEnumType @cost(weight: "10")
+  "Renown rank requirement"
+  renownRankRequirement: SortEnumType @cost(weight: "10")
+  "Item level"
+  itemLevel: SortEnumType @cost(weight: "10")
+  "Number of talisman slots"
+  talismanSlots: SortEnumType @cost(weight: "10")
+}
+
+input ItemTypeOperationFilterInput {
+  eq: ItemType @cost(weight: "10")
+  neq: ItemType @cost(weight: "10")
+  in: [ItemType!] @cost(weight: "10")
+  nin: [ItemType!] @cost(weight: "10")
+}
+
+input KillFilterInput {
+  and: [KillFilterInput!]
+  or: [KillFilterInput!]
+  "UTC Timestamp"
+  time: IntOperationFilterInput
+  "ScenarioId, 0 if not in a scenario"
+  scenarioId: UnsignedIntOperationFilterInputType
+  "Zone Id"
+  zoneId: UnsignedShortOperationFilterInputType
+  "Specifies the instance of a scenario this kill happened in"
+  instanceId: UuidOperationFilterInput
+  "Id of the skirmish the kill happened in"
+  skirmishId: UuidOperationFilterInput
+  "Percent of the total damage done by the killer"
+  damagePercent: ByteOperationFilterInput
+  "Number of assists"
+  numAssists: UnsignedIntOperationFilterInputType
+  victimCharacterId: UnsignedIntOperationFilterInputType
+  victimGuildId: UnsignedIntOperationFilterInputType
+  victimLevel: ByteOperationFilterInput
+  victimRenownRank: ByteOperationFilterInput
+  victimCareer: CareerLineOperationFilterInput
+  killerCharacterId: UnsignedIntOperationFilterInputType
+  killerGuildId: UnsignedIntOperationFilterInputType
+  killerLevel: ByteOperationFilterInput
+  killerRenownRank: ByteOperationFilterInput
+  killerCareer: CareerLineOperationFilterInput
+}
+
+input LongOperationFilterInput {
+  eq: Long @cost(weight: "10")
+  neq: Long @cost(weight: "10")
+  in: [Long] @cost(weight: "10")
+  nin: [Long] @cost(weight: "10")
+  gt: Long @cost(weight: "10")
+  ngt: Long @cost(weight: "10")
+  gte: Long @cost(weight: "10")
+  ngte: Long @cost(weight: "10")
+  lt: Long @cost(weight: "10")
+  nlt: Long @cost(weight: "10")
+  lte: Long @cost(weight: "10")
+  nlte: Long @cost(weight: "10")
+}
+
+input NullableOfTomeSectionOperationFilterInput {
+  eq: TomeOfKnowledgeSection @cost(weight: "10")
+  neq: TomeOfKnowledgeSection @cost(weight: "10")
+  in: [TomeOfKnowledgeSection] @cost(weight: "10")
+  nin: [TomeOfKnowledgeSection] @cost(weight: "10")
+}
+
+input PlayerFeudFilterInput {
+  player1Id: ID!
+  player2Id: ID!
+}
+
+input QuestFilterInput {
+  and: [QuestFilterInput!]
+  or: [QuestFilterInput!]
+  id: UnsignedShortOperationFilterInputType
+  type: QuestTypeFlagsOperationFilterInput
+  name: StringOperationFilterInput
+  raceRestriction: RaceMaskOperationFilterInput
+  careerRestriction: CareerMaskOperationFilterInput
+}
+
+input QuestSortInput {
+  id: SortEnumType @cost(weight: "10")
+  type: SortEnumType @cost(weight: "10")
+  name: SortEnumType @cost(weight: "10")
+}
+
+input QuestTypeFlagsFlagsInput {
+  isNone: Boolean
+  isGroup: Boolean
+  isTravel: Boolean
+  isTome: Boolean
+  isRvR: Boolean
+  isPlayerKill: Boolean
+  isEpic: Boolean
+}
+
+input QuestTypeFlagsOperationFilterInput {
+  eq: QuestTypeFlagsFlagsInput @cost(weight: "10")
+  neq: QuestTypeFlagsFlagsInput @cost(weight: "10")
+  in: [QuestTypeFlagsFlagsInput!] @cost(weight: "10")
+  nin: [QuestTypeFlagsFlagsInput!] @cost(weight: "10")
+}
+
+input RaceMaskFlagsInput {
+  isDwarf: Boolean
+  isOrc: Boolean
+  isGoblin: Boolean
+  isHighElf: Boolean
+  isDarkElf: Boolean
+  isEmpire: Boolean
+  isChaos: Boolean
+}
+
+input RaceMaskOperationFilterInput {
+  eq: RaceMaskFlagsInput @cost(weight: "10")
+  neq: RaceMaskFlagsInput @cost(weight: "10")
+  in: [RaceMaskFlagsInput!] @cost(weight: "10")
+  nin: [RaceMaskFlagsInput!] @cost(weight: "10")
+}
+
+input RatingTypeOperationFilterInput {
+  eq: RatingType @cost(weight: "10")
+  neq: RatingType @cost(weight: "10")
+  in: [RatingType!] @cost(weight: "10")
+  nin: [RatingType!] @cost(weight: "10")
+}
+
+input RealmsOperationFilterInput {
+  eq: Realm @cost(weight: "10")
+  neq: Realm @cost(weight: "10")
+  in: [Realm!] @cost(weight: "10")
+  nin: [Realm!] @cost(weight: "10")
+}
+
+input ScenarioRecordFilterInput {
+  and: [ScenarioRecordFilterInput!]
+  or: [ScenarioRecordFilterInput!]
+  "Scenario instance Id"
+  id: UuidOperationFilterInput
+  "Scenario Id"
+  scenarioId: UnsignedIntOperationFilterInputType
+  "Winning team, 0 is order, 1 is destruction"
+  winner: ByteOperationFilterInput
+  "Scenario tier"
+  tier: ByteOperationFilterInput
+  "Queue type"
+  queueType: ByteOperationFilterInput
+  "The start time of the scenario"
+  startTime: LongOperationFilterInput
+  "The end time of the scenario"
+  endTime: LongOperationFilterInput
+}
+
+input SkirmishFilterInput {
+  and: [SkirmishFilterInput!]
+  or: [SkirmishFilterInput!]
+  "Start time"
+  startTime: LongOperationFilterInput
+  "End time"
+  endTime: LongOperationFilterInput
+  "Scenario Id"
+  scenarioId: UnsignedShortOperationFilterInputType
+  "Primary Zone"
+  primaryZoneId: UnsignedShortOperationFilterInputType
+  "Primary Area"
+  primaryAreaId: UnsignedShortOperationFilterInputType
+  "Scenario instance"
+  instanceId: UuidOperationFilterInput
+  "Total number of kills"
+  numberOfKills: IntOperationFilterInput
+  "Total number of kills for order"
+  numberOfKillsOrder: IntOperationFilterInput
+  "Total number of kills for destruction"
+  numberOfKillsDestruction: IntOperationFilterInput
+  "Total number of players"
+  numberOfPlayers: IntOperationFilterInput
+  "Total number of players order"
+  numberOfPlayersOrder: IntOperationFilterInput
+  "Total number of players destruction"
+  numberOfPlayersDestruction: IntOperationFilterInput
+}
+
+input SkirmishScoreboardEntrySortInput {
+  level: SortEnumType @cost(weight: "10")
+  renownRank: SortEnumType @cost(weight: "10")
+  kills: SortEnumType @cost(weight: "10")
+  deaths: SortEnumType @cost(weight: "10")
+  deathBlows: SortEnumType @cost(weight: "10")
+  damage: SortEnumType @cost(weight: "10")
+  killDamage: SortEnumType @cost(weight: "10")
+  healing: SortEnumType @cost(weight: "10")
+  protection: SortEnumType @cost(weight: "10")
+}
+
+input StringOperationFilterInput {
+  and: [StringOperationFilterInput!]
+  or: [StringOperationFilterInput!]
+  eq: String @cost(weight: "10")
+  neq: String @cost(weight: "10")
+  contains: String @cost(weight: "20")
+  ncontains: String @cost(weight: "20")
+  in: [String] @cost(weight: "10")
+  nin: [String] @cost(weight: "10")
+  startsWith: String @cost(weight: "20")
+  nstartsWith: String @cost(weight: "20")
+  endsWith: String @cost(weight: "20")
+  nendsWith: String @cost(weight: "20")
+}
+
+input TomeHelpTypeOperationFilterInput {
+  eq: TomeHelpType @cost(weight: "10")
+  neq: TomeHelpType @cost(weight: "10")
+  in: [TomeHelpType!] @cost(weight: "10")
+  nin: [TomeHelpType!] @cost(weight: "10")
+}
+
+input TomeOfKnowledgeAchievementEntryFilterInput {
+  and: [TomeOfKnowledgeAchievementEntryFilterInput!]
+  or: [TomeOfKnowledgeAchievementEntryFilterInput!]
+  "SubType"
+  tomeAchievementSubTypeId: UnsignedIntOperationFilterInputType
+  "Name"
+  description: StringOperationFilterInput
+}
+
+input TomeOfKnowledgeEntryFilterInput {
+  and: [TomeOfKnowledgeEntryFilterInput!]
+  or: [TomeOfKnowledgeEntryFilterInput!]
+  "Type"
+  type: TomeHelpTypeOperationFilterInput
+  "Description"
+  description: StringOperationFilterInput
+  "Realm"
+  realm: RealmsOperationFilterInput
+  "XP reward"
+  xp: UnsignedIntOperationFilterInputType
+  "Tome of Knowledge section"
+  tomeSection: NullableOfTomeSectionOperationFilterInput
+}
+
+input UnsignedIntOperationFilterInputType {
+  eq: UnsignedInt @cost(weight: "10")
+  neq: UnsignedInt @cost(weight: "10")
+  in: [UnsignedInt] @cost(weight: "10")
+  nin: [UnsignedInt] @cost(weight: "10")
+  gt: UnsignedInt @cost(weight: "10")
+  ngt: UnsignedInt @cost(weight: "10")
+  gte: UnsignedInt @cost(weight: "10")
+  ngte: UnsignedInt @cost(weight: "10")
+  lt: UnsignedInt @cost(weight: "10")
+  nlt: UnsignedInt @cost(weight: "10")
+  lte: UnsignedInt @cost(weight: "10")
+  nlte: UnsignedInt @cost(weight: "10")
+}
+
+input UnsignedLongOperationFilterInputType {
+  eq: UnsignedLong @cost(weight: "10")
+  neq: UnsignedLong @cost(weight: "10")
+  in: [UnsignedLong] @cost(weight: "10")
+  nin: [UnsignedLong] @cost(weight: "10")
+  gt: UnsignedLong @cost(weight: "10")
+  ngt: UnsignedLong @cost(weight: "10")
+  gte: UnsignedLong @cost(weight: "10")
+  ngte: UnsignedLong @cost(weight: "10")
+  lt: UnsignedLong @cost(weight: "10")
+  nlt: UnsignedLong @cost(weight: "10")
+  lte: UnsignedLong @cost(weight: "10")
+  nlte: UnsignedLong @cost(weight: "10")
+}
+
+input UnsignedShortOperationFilterInputType {
+  eq: UnsignedShort @cost(weight: "10")
+  neq: UnsignedShort @cost(weight: "10")
+  in: [UnsignedShort] @cost(weight: "10")
+  nin: [UnsignedShort] @cost(weight: "10")
+  gt: UnsignedShort @cost(weight: "10")
+  ngt: UnsignedShort @cost(weight: "10")
+  gte: UnsignedShort @cost(weight: "10")
+  ngte: UnsignedShort @cost(weight: "10")
+  lt: UnsignedShort @cost(weight: "10")
+  nlt: UnsignedShort @cost(weight: "10")
+  lte: UnsignedShort @cost(weight: "10")
+  nlte: UnsignedShort @cost(weight: "10")
+}
+
+input UuidOperationFilterInput {
+  eq: UUID @cost(weight: "10")
+  neq: UUID @cost(weight: "10")
+  in: [UUID] @cost(weight: "10")
+  nin: [UUID] @cost(weight: "10")
+  gt: UUID @cost(weight: "10")
+  ngt: UUID @cost(weight: "10")
+  gte: UUID @cost(weight: "10")
+  ngte: UUID @cost(weight: "10")
+  lt: UUID @cost(weight: "10")
+  nlt: UUID @cost(weight: "10")
+  lte: UUID @cost(weight: "10")
+  nlte: UUID @cost(weight: "10")
+}
+
+input WarJournalEntryFilterInput {
+  and: [WarJournalEntryFilterInput!]
+  or: [WarJournalEntryFilterInput!]
+  "Name of the entry"
+  name: StringOperationFilterInput
+  zoneId: UnsignedShortOperationFilterInputType
+  areaId: UnsignedShortOperationFilterInputType
+  storylineId: UnsignedIntOperationFilterInputType
+  isRvR: BooleanOperationFilterInput
+}
+
+input WarJournalStorylineFilterInput {
+  and: [WarJournalStorylineFilterInput!]
+  or: [WarJournalStorylineFilterInput!]
+  "Name of the storyline"
+  name: StringOperationFilterInput
+}
+
+enum AbilityType {
+  "Unused"
+  FIRST
+  "Regular abilities"
+  DEFAULT
+  "Morale abilities"
+  MORALE
+  "Tactics"
+  TACTIC
+  "Granted abilities"
+  GRANTED
+  "Passive buffs"
+  PASSIVE
+  "Pet abilities"
+  PET
+  GUILD
+  TAUNT_GUARD
+}
+
+"Player Archetypes"
+enum Archetype {
+  TANK
+  MELEE_DPS
+  RANGED_DPS
+  HEALER
+}
+
+"Player Careers"
+enum Career {
+  "Iron Breaker"
+  IRON_BREAKER
+  "Slayer"
+  SLAYER
+  "Rune Priest"
+  RUNE_PRIEST
+  "Engineer"
+  ENGINEER
+  "Black Orc"
+  BLACK_ORC
+  "Choppa"
+  CHOPPA
+  "Shaman"
+  SHAMAN
+  "Squig Herder"
+  SQUIG_HERDER
+  "Witch Hunter"
+  WITCH_HUNTER
+  "Knight of the Blazing Sun"
+  KNIGHT_OF_THE_BLAZING_SUN
+  "Bright Wizard"
+  BRIGHT_WIZARD
+  "Warrior Priest"
+  WARRIOR_PRIEST
+  "Chosen"
+  CHOSEN
+  "Marauder"
+  MARAUDER
+  "Zealot"
+  ZEALOT
+  "Magus"
+  MAGUS
+  "Sword Master"
+  SWORD_MASTER
+  "Shadow Warrior"
+  SHADOW_WARRIOR
+  "White Lion"
+  WHITE_LION
+  "Archmage"
+  ARCHMAGE
+  "Black Guard"
+  BLACK_GUARD
+  "Witch Elf"
+  WITCH_ELF
+  "Disciple of Khaine"
+  DISCIPLE_OF_KHAINE
+  "Sorceress"
+  SORCERER
+}
+
+enum CareerMask {
+  IRONBREAKER
+  SLAYER
+  RUNE_PRIEST
+  ENGINEER
+  BLACK_ORC
+  CHOPPA
+  SHAMAN
+  SQUIG_HERDER
+  WITCH_HUNTER
+  KNIGHT
+  BRIGHT_WIZARD
+  WARRIOR_PRIEST
+  CHOSEN
+  MARAUDER
+  ZEALOT
+  MAGUS
+  SWORD_MASTER
+  SHADOW_WARRIOR
+  WHITE_LION
+  ARCHMAGE
+  BLACKGUARD
+  WITCH_ELF
+  DISCIPLE_OF_KHAINE
+  SORCERER
+}
+
+enum CraftingItemType {
+  STABILIZER
+  MAIN_INGREDIENT
+  EXTENDER
+  MULTIPLIER
+  CONTAINER
+  CONTAINER_DYE
+  CONTAINER_ESSENCE
+  PIGMENT
+  FIXER
+  GOLDWEED
+  GOLDDUST
+  QUICKSILVER
+  TALISMAN_CONTAINER
+  FRAGMENT
+  GOLD_ESSENCE
+  CURIO
+  MAGIC_ESSENCE
+  STIMULANT
+}
+
+enum CreatureSubType {
+  UNCLASSIFIED
+  ANIMALS_BEASTS_BASILISK
+  ANIMALS_BEASTS_BEAR
+  ANIMALS_BEASTS_BOAR
+  ANIMALS_BEASTS_GIANT_BAT
+  ANIMALS_BEASTS_GREAT_CAT
+  ANIMALS_BEASTS_HOUND
+  ANIMALS_BEASTS_RHINOX
+  ANIMALS_BEASTS_WOLF
+  ANIMALS_CRITTER_BAT
+  ANIMALS_CRITTER_BIRD
+  ANIMALS_CRITTER_CRAB
+  ANIMALS_CRITTER_DEER
+  ANIMALS_CRITTER_HARE
+  ANIMALS_CRITTER_LIZARD
+  ANIMALS_CRITTER_MAGGOT
+  ANIMALS_CRITTER_RAT
+  ANIMALS_CRITTER_SPIDER
+  ANIMALS_INSECTS_ARACHNIDS_GIANT_SCARAB
+  ANIMALS_INSECTS_ARACHNIDS_GIANT_SCORPION
+  ANIMALS_INSECTS_ARACHNIDS_GIANT_SPIDER
+  ANIMALS_INSECTS_ARACHNIDS_TOMB_SWARM
+  ANIMALS_LIVESTOCK_CAT
+  ANIMALS_LIVESTOCK_CHICKEN
+  ANIMALS_LIVESTOCK_COW
+  ANIMALS_LIVESTOCK_DOG
+  ANIMALS_LIVESTOCK_HORSE
+  ANIMALS_LIVESTOCK_PIG
+  ANIMALS_LIVESTOCK_SHEEP
+  ANIMALS_REPTILES_COLD_ONE
+  ANIMALS_REPTILES_GIANT_LIZARD
+  DAEMONS_KHORNE_BLOODBEAST
+  DAEMONS_KHORNE_BLOODLETTER
+  DAEMONS_KHORNE_BLOODTHIRSTER
+  DAEMONS_KHORNE_FLESH_HOUND
+  DAEMONS_KHORNE_JUGGERNAUT_OF_KHORNE
+  DAEMONS_NURGLE_GREAT_UNCLEAN_ONE
+  DAEMONS_NURGLE_NURGLING
+  DAEMONS_NURGLE_PLAGUEBEARER
+  DAEMONS_NURGLE_PLAGUEBEAST
+  DAEMONS_NURGLE_SLIME_HOUND
+  DAEMONS_SLAANESH_DAEMONETTE
+  DAEMONS_SLAANESH_FIEND
+  DAEMONS_SLAANESH_KEEPER_OF_SECRETS
+  DAEMONS_TZEENTCH_FIREWYRM
+  DAEMONS_TZEENTCH_FLAMER
+  DAEMONS_TZEENTCH_HORROR
+  DAEMONS_TZEENTCH_LORD_OF_CHANGE
+  DAEMONS_TZEENTCH_SCREAMER
+  DAEMONS_TZEENTCH_WATCHER
+  DAEMONS_UNMARKED_DAEMONS_CHAOS_FURY
+  DAEMONS_UNMARKED_DAEMONS_CHAOS_HOUND
+  DAEMONS_UNMARKED_DAEMONS_CHAOS_SPAWN
+  DAEMONS_UNMARKED_DAEMONS_DAEMON_PRINCE
+  DAEMONS_UNMARKED_DAEMONS_DAEMONVINE
+  DAEMONS_UNMARKED_DAEMONS_WALKER
+  HUMANOIDS_BEASTMEN_BESTIGOR
+  HUMANOIDS_BEASTMEN_BRAY_SHAMAN
+  HUMANOIDS_BEASTMEN_DOOMBULL
+  HUMANOIDS_BEASTMEN_GOR
+  HUMANOIDS_BEASTMEN_UNGOR
+  HUMANOIDS_DARK_ELVES_BLACK_GUARD
+  HUMANOIDS_DARK_ELVES_DARK_ELF
+  HUMANOIDS_DARK_ELVES_DISCIPLE_OF_KHAINE
+  HUMANOIDS_DARK_ELVES_SORCERESS
+  HUMANOIDS_DARK_ELVES_WITCH_ELVES
+  HUMANOIDS_DWARFS_DWARF
+  HUMANOIDS_DWARFS_ENGINEER
+  HUMANOIDS_DWARFS_HAMMERER
+  HUMANOIDS_DWARFS_IRONBREAKER
+  HUMANOIDS_DWARFS_RUNEPRIEST
+  HUMANOIDS_DWARFS_SLAYER
+  HUMANOIDS_ELVES_ARCHMAGE
+  HUMANOIDS_ELVES_HIGH_ELF
+  HUMANOIDS_ELVES_SHADOW_WARRIOR
+  HUMANOIDS_ELVES_SWORDMASTER
+  HUMANOIDS_ELVES_WHITE_LION
+  HUMANOIDS_GREENSKINS_BLACK_ORC
+  HUMANOIDS_GREENSKINS_CHOPPA
+  HUMANOIDS_GREENSKINS_GNOBLAR
+  HUMANOIDS_GREENSKINS_GOBLIN
+  HUMANOIDS_GREENSKINS_NIGHT_GOBLIN
+  HUMANOIDS_GREENSKINS_ORC
+  HUMANOIDS_GREENSKINS_SAVAGE_ORC
+  HUMANOIDS_GREENSKINS_SHAMAN
+  HUMANOIDS_GREENSKINS_SNOTLING
+  HUMANOIDS_GREENSKINS_SQUIG
+  HUMANOIDS_GREENSKINS_SQUIG_HERDER
+  HUMANOIDS_HUMANS_BRIGHT_WIZARD
+  HUMANOIDS_HUMANS_CHAOS
+  HUMANOIDS_HUMANS_CHOSEN
+  HUMANOIDS_HUMANS_EMPIRE
+  HUMANOIDS_HUMANS_GHOUL
+  HUMANOIDS_HUMANS_HUMAN
+  HUMANOIDS_HUMANS_KNIGHT_OF_THE_BLAZING_SUN
+  HUMANOIDS_HUMANS_MAGUS
+  HUMANOIDS_HUMANS_MARAUDER
+  HUMANOIDS_HUMANS_WARRIOR_PRIEST
+  HUMANOIDS_HUMANS_WITCH_HUNTER
+  HUMANOIDS_HUMANS_ZEALOT
+  HUMANOIDS_OGRES_GORGER
+  HUMANOIDS_OGRES_OGRE
+  HUMANOIDS_OGRES_OGRE_BULL
+  HUMANOIDS_OGRES_OGRE_TYRANT
+  HUMANOIDS_OGRES_YHETEE
+  HUMANOIDS_SKAVEN_RAT_OGRE
+  HUMANOIDS_SKAVEN_SKAVEN
+  MONSTERS_CHAOS_BREEDS_CENTIGOR
+  MONSTERS_CHAOS_BREEDS_CHAOS_MUTANT
+  MONSTERS_CHAOS_BREEDS_DRAGON_OGRE
+  MONSTERS_CHAOS_BREEDS_FLAYERKIN
+  MONSTERS_CHAOS_BREEDS_HARPY
+  MONSTERS_CHAOS_BREEDS_MAGGOT
+  MONSTERS_CHAOS_BREEDS_MINOTAUR
+  MONSTERS_CHAOS_BREEDS_TUSKGOR
+  MONSTERS_DRAGONOID_DRAGON
+  MONSTERS_DRAGONOIDS_HYDRA
+  MONSTERS_DRAGONOIDS_WYVERN
+  MONSTERS_GIANTS_CHAOS_GIANT
+  MONSTERS_GIANTS_GIANT
+  MONSTERS_MAGICAL_BEASTS_COCKATRICE
+  MONSTERS_MAGICAL_BEASTS_GRIFFON
+  MONSTERS_MAGICAL_BEASTS_IMP
+  MONSTERS_MAGICAL_BEASTS_MANTICORE
+  MONSTERS_MAGICAL_BEASTS_PEGASUS
+  MONSTERS_MAGICAL_BEASTS_UNICORN
+  MONSTERS_TROLLS_CHAOS_TROLL
+  MONSTERS_TROLLS_RIVER_TROLL
+  MONSTERS_TROLLS_STONE_TROLL
+  MONSTERS_TROLLS_TROLL
+  PLANTS_FOREST_SPIRITS_DRYAD
+  PLANTS_FOREST_SPIRITS_SPITE
+  PLANTS_FOREST_SPIRITS_TREEKIN
+  PLANTS_FOREST_SPIRITS_TREEMAN
+  UNDEAD_CONSTRUCTS_ASP_BONE_CONSTRUCT
+  UNDEAD_CONSTRUCTS_BONE_GIANT
+  UNDEAD_CONSTRUCTS_CONSTRUCT
+  UNDEAD_CONSTRUCTS_LIVING_ARMOR
+  UNDEAD_CONSTRUCTS_SCARAB_BONE_CONSTRUCT
+  UNDEAD_CONSTRUCTS_TOMB_SCORPION
+  UNDEAD_CONSTRUCTS_USHABTI
+  UNDEAD_CONSTRUCTS_WINGED_NIGHTMARE
+  UNDEAD_GREATER_UNDEAD_LICHE
+  UNDEAD_GREATER_UNDEAD_PRESERVED_DEAD
+  UNDEAD_GREATER_UNDEAD_VAMPIRE
+  UNDEAD_SKELETONS_CARRION
+  UNDEAD_SKELETONS_SKELETON
+  UNDEAD_SPIRITS_BANSHEE
+  UNDEAD_SPIRITS_SPIRIT_HOST
+  UNDEAD_SPIRITS_WRAITH
+  UNDEAD_WIGHTS_WIGHT
+  UNDEAD_ZOMBIES_ZOMBIE
+  ANIMALS_BIRDS_WARHAWK
+  ANIMALS_BIRDS_VULTURE
+  ANIMALS_BIRDS_GREAT_EAGLE
+  DWARVEN_SLAYER
+  HUMANOIDS_HUMANS_BANDIT
+  HUMANOIDS_HUMANS_DRAKK_CULTIST
+  HUMANOIDS_HUMANS_PLAGUE_VICTIM
+  SIEGE_SINGLE_TARGET
+  SIEGE_GTAOE
+  SIEGE_OIL
+  SIEGE_RAM
+  SIEGE_CATAPULT
+  PLANTS_FOREST_SPIRITS_KURNOUS
+}
+
+enum CreatureType {
+  UNCLASSIFIED
+  ANIMALS_BEASTS
+  ANIMALS_CRITTER
+  ANIMALS_INSECTS_ARACHNIDS
+  ANIMALS_LIVESTOCK
+  ANIMALS_REPTILES
+  DAEMONS_KHORNE
+  DAEMONS_NURGLE
+  DAEMONS_SLAANESH
+  DAEMONS_TZEENTCH
+  DAEMONS_UNMARKED
+  HUMANOIDS_BEASTMEN
+  HUMANOIDS_DARK_ELVES
+  HUMANOIDS_DWARFS
+  HUMANOIDS_ELVES
+  HUMANOIDS_GREENSKINS
+  HUMANOIDS_HUMANS
+  HUMANOIDS_OGRES
+  HUMANOIDS_SKAVEN
+  MONSTERS_CHAOS_BREEDS
+  MONSTERS_DRAGONOIDS
+  MONSTERS_GIANTS
+  MONSTERS_MAGICAL_BEASTS
+  MONSTERS_TROLLS
+  PLANTS_FOREST_SPIRITS
+  UNDEAD_CONSTRUCTS
+  UNDEAD_GREATER_UNDEAD
+  UNDEAD_SKELETONS
+  UNDEAD_SPIRITS
+  UNDEAD_WIGHTS
+  UNDEAD_ZOMBIES
+  ANIMALS_BIRDS
+  SIEGE
+}
+
+"Character equipment slots"
+enum EquipSlot {
+  NONE
+  EVENT
+  MAIN_HAND
+  OFF_HAND
+  RANGED_WEAPON
+  EITHER_HAND
+  STANDARD
+  TROPHY1
+  TROPHY2
+  TROPHY3
+  TROPHY4
+  TROPHY5
+  BODY
+  GLOVES
+  BOOTS
+  HELM
+  SHOULDER
+  POCKET1
+  POCKET2
+  BACK
+  BELT
+  JEWELLERY1
+  JEWELLERY2
+  JEWELLERY3
+  JEWELLERY4
+}
+
+enum ItemBindType {
+  "Not Bound"
+  NONE
+  "Bound to character on pickup"
+  BIND_ON_PICKUP
+  "Bound to character on equip"
+  BIND_ON_EQUIP
+  "Bound to account on pickup"
+  ACCOUNT_BIND_ON_PICKUP
+  "Bound to account on equip"
+  ACCOUNT_BIND_ON_EQUIP
+}
+
+enum ItemExpirationTimeType {
+  "Time offset is relative to current time"
+  RELATIVE
+  "Time offset is absolute (i.e. unix timestamp)"
+  ABSOLUTE
+  "Time offset is when a live event ends."
+  LIVE_EVENT
+  "This will expire on a hardcoded time (after next zandri expedition)"
+  ZANDRI_EXPEDITION
+}
+
+enum ItemExpirationType {
+  "Normal non expiring items"
+  NON_EXPIRING
+  "Expire starts on pickup"
+  ON_PICKUP
+  "Expire stats on equip"
+  ON_EQUIP
+}
+
+enum ItemRarity {
+  UTILITY
+  COMMON
+  UNCOMMON
+  RARE
+  VERY_RARE
+  MYTHIC
+}
+
+enum ItemType {
+  NONE
+  SWORD
+  AXE
+  HAMMER
+  BASIC_SHIELD
+  SHIELD
+  ROBE
+  BOW
+  CROSSBOW
+  GUN
+  EXPERT_SHIELD
+  STAFF
+  DAGGER
+  SPEAR
+  PISTOL
+  LANCE
+  REPEATING_CROSSBOW
+  LIGHT_ARMOR
+  MEDIUM_ARMOR
+  HEAVY_ARMOR
+  QUEST
+  MEDIUM_ROBE
+  ENHANCEMENT
+  TROPHY
+  CHARM
+  DYE
+  BASIC_MOUNT
+  ADVANCED_MOUNT
+  POTION
+  SALVAGING
+  MARKETING
+  CRAFTING
+  ACCESSORY
+  CURRENCY
+  TELEPORT
+  TELEPORT_GROUP
+  SIEGE
+  TREASURE_CHEST
+  TREASURE_KEY
+  REFINER_TOOL
+}
+
+enum KillDamageAttackerType {
+  OTHER
+  PLAYER
+}
+
+enum KillDamageSourceType {
+  OTHER
+  FALL_DAMAGE
+  ABILITY
+}
+
+enum PublicQuestDifficulty {
+  EASY
+  MEDIUM
+  HARD
+  VERY_HARD
+}
+
+enum PublicQuestType {
+  NONE
+  PUBLIC_QUEST
+  KEEP
+  FORTRESS
+  CITY_SIEGE
+  LIVE_EVENT
+}
+
+enum QuestRepeatableType {
+  "Not repeatable"
+  NONE
+  "Repeatable"
+  DONE
+  "Each Week"
+  WEEKLY
+}
+
+enum QuestTypeFlags {
+  NONE
+  GROUP
+  TRAVEL
+  TOME
+  RV_R
+  PLAYER_KILL
+  EPIC
+}
+
+"Player Races"
+enum Race {
+  DWARF
+  ORC
+  GOBLIN
+  HIGH_ELF
+  DARK_ELF
+  EMPIRE
+  CHAOS
+}
+
+enum RaceMask {
+  DWARF
+  ORC
+  GOBLIN
+  HIGH_ELF
+  DARK_ELF
+  EMPIRE
+  CHAOS
+}
+
+enum RankedLeaderboardRatingType {
+  RANKED_SOLO
+  RANKED_GROUP
+}
+
+enum RatingType {
+  CASUAL
+  RANKED_SOLO
+  RANKED_GROUP
+  CITY
+}
+
+enum Realm {
+  "No realm"
+  NEUTRAL
+  "Order"
+  ORDER
+  "Destruction"
+  DESTRUCTION
+}
+
+enum ScenarioEnabledType {
+  DISABLED
+  NORMAL
+  ALWAYS_ENABLED
+  DEVELOPER
+  BY_COMMAND
+}
+
+enum ScenarioQueueType {
+  "Normal scenarios"
+  STANDARD
+  "Group Ranked scenarios"
+  GROUP_RANKED
+  "Discordant scenarios"
+  SOLO
+  "City Sieges"
+  CITY_SIEGE
+  "Solo Ranked scenarios"
+  SOLO_RANKED
+}
+
+enum ScenarioType {
+  DOMINATION
+  MURDERBALL
+  DOUBLE_DOMINATION
+  DROP_BOMB
+  DROP_PART
+  DOMINATION_PUSH_CENTER
+  DOMINATION_EC
+  DOMINATION_KHAINE
+  FLAG_DOMINATION
+  CAPTURE_THE_FLAG
+  DOMINATION_PUSH
+  CITY_SIEGE
+  DOMINATION_FORGE
+  MONSTER_DEFEND
+  DOMINATION_DRAGONS_BANE
+  RANDOM6V6
+  ROTATING_KING_OF_THE_HILL
+  DAEMON_BALL
+  DOMINATION_TWISTING_TOWER
+  FLAG_DOMINATION_CREATURE_BOSS
+  PICK_UP_GROUP_RANDOM
+  REVERSE_DAEMON_BALL
+  DEATHMATCH
+}
+
+enum Sex {
+  "Male"
+  MALE
+  "Female"
+  FEMALE
+}
+
+enum SortEnumType {
+  ASC
+  DESC
+}
+
+enum Stat {
+  STRENGTH
+  AGILITY
+  WILLPOWER
+  TOUGHNESS
+  WOUNDS
+  INITIATIVE
+  WEAPON_SKILL
+  BALLISTIC_SKILL
+  INTELLIGENCE
+  SPIRIT_RESISTANCE
+  ELEMENTAL_RESISTANCE
+  CORPOREAL_RESISTANCE
+  INCOMING_DAMAGE
+  INCOMING_DAMAGE_PERCENT
+  OUTGOING_DAMAGE
+  OUTGOING_DAMAGE_PERCENT
+  ARMOR
+  VELOCITY
+  BLOCK
+  PARRY
+  EVADE
+  DISRUPT
+  ACTION_POINT_REGEN
+  MORALE_REGEN
+  COOLDOWN
+  BUILD_TIME
+  CRITICAL_DAMAGE
+  RANGE
+  AUTO_ATTACK_SPEED
+  RADIUS
+  AUTO_ATTACK_DAMAGE
+  ACTION_POINT_COST
+  CRITICAL_HIT_RATE
+  CRITICAL_DAMAGE_TAKEN_REDUCTION
+  EFFECT_RESIST
+  EFFECT_BUFF
+  MINIMUM_RANGE
+  DAMAGE_ABSORB
+  SETBACK_CHANCE
+  SETBACK_VALUE
+  XP_WORTH
+  RENOWN_WORTH
+  INFLUENCE_WORTH
+  MONETARY_WORTH
+  AGGRO_RADIUS
+  TARGET_DURATION
+  SPECIALIZATION
+  GOLD_LOOTED
+  XP_RECEIVED
+  BUTCHERING
+  SCAVENGING
+  CULTIVATION
+  APOTHECARY
+  TALISMAN_MAKING
+  SALVAGING
+  STEALTH
+  STEALTH_DETECTION
+  HATE_CAUSED
+  HATE_RECEIVED
+  OFFHAND_PROC_CHANCE
+  OFFHAND_DAMAGE
+  RENOWN_RECEIVED
+  INFLUENCE_RECEIVED
+  DISMOUNT_CHANCE
+  GRAVITY
+  LEVITATION_HEIGHT
+  MELEE_CRIT_RATE
+  RANGED_CRIT_RATE
+  MAGIC_CRIT_RATE
+  HEALTH_REGEN
+  MELEE_POWER
+  RANGED_POWER
+  MAGIC_POWER
+  ARMOR_PENETRATION_REDUCTION
+  CRITICAL_HIT_RATE_REDUCTION
+  BLOCK_STRIKETHROUGH
+  PARRY_STRIKETHROUGH
+  EVADE_STRIKETHROUGH
+  DISRUPT_STRIKETHROUGH
+  HEAL_CRIT_RATE
+  MAX_ACTION_POINTS
+  MASTERY_1_BONUS
+  MASTERY_2_BONUS
+  MASTERY_3_BONUS
+  HEALING_POWER
+  INTERACT_TIME
+  FORTITUDE
+  OUTGOING_HEAL_PERCENT
+  INCOMING_HEAL_PERCENT
+  ARMOR_PENETRATION
+  LOOT_CHANCE
+}
+
+enum TomeHelpType {
+  NONE
+  BEGINNER_HELP
+  GAMEPLAY_HELP
+  UI_HELP
+  ADVANCED_HELP
+}
+
+"Tome Of Knowledge sections"
+enum TomeOfKnowledgeSection {
+  BESTIARY
+  NOTEWORTHY_PERSONS
+  HISTORY_AND_LORE
+  OLD_WORLD_ARMORY
+  WARD
+  WAR_JOURNAL
+  PLAYER_TITLES
+  TACTICS
+  ACHIEVEMENTS
+  ZONE_MAPS
+  LIVE_EVENT
+  GAME_MANUAL
+  HELP
+  GAME_FAQ
+}
+
+enum TradeSkill {
+  NONE
+  BUTCHERING
+  SCAVENGING
+  CULTIVATION
+  APOTHECARY
+  TALISMAN_MAKING
+  SALVAGING
+}
+
+enum ZoneType {
+  NORMAL
+  SCENARIO
+  INSTANCE
+}
+
+"The purpose of the `cost` directive is to define a `weight` for GraphQL types, fields, and arguments. Static analysis can use these weights when calculating the overall cost of a query or response."
+directive @cost("The `weight` argument defines what value to add to the overall cost for every appearance, or possible appearance, of a type, field, argument, etc." weight: String!) on SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM | INPUT_FIELD_DEFINITION
+
+"The purpose of the `@listSize` directive is to either inform the static analysis about the size of returned lists (if that information is statically available), or to point the analysis to where to find that information."
+directive @listSize("The `assumedSize` argument can be used to statically define the maximum length of a list returned by a field." assumedSize: Int "The `slicingArguments` argument can be used to define which of the field's arguments with numeric type are slicing arguments, so that their value determines the size of the list returned by that field. It may specify a list of multiple slicing arguments." slicingArguments: [String!] "The `slicingArgumentDefaultValue` argument can be used to define a default value for a slicing argument, which is used if the argument is not present in a query." slicingArgumentDefaultValue: Int "The `sizedFields` argument can be used to define that the value of the `assumedSize` argument or of a slicing argument does not affect the size of a list returned by a field itself, but that of a list returned by one of its sub-fields." sizedFields: [String!] "The `requireOneSlicingArgument` argument can be used to inform the static analysis that it should expect that exactly one of the defined slicing arguments is present in a query. If that is not the case (i.e., if none or multiple slicing arguments are present), the static analysis may throw an error." requireOneSlicingArgument: Boolean! = true) on FIELD_DEFINITION
+
+"The `@specifiedBy` directive is used within the type system definition language to provide a URL for specifying the behavior of custom scalar definitions."
+directive @specifiedBy("The specifiedBy URL points to a human-readable specification. This field will only read a result for scalar types." url: String!) on SCALAR
+
+"The `Byte` scalar type represents non-fractional whole numeric values. Byte can represent values between 0 and 255."
+scalar Byte
+
+"The `DateTime` scalar represents an ISO-8601 compliant date time type."
+scalar DateTime @specifiedBy(url: "https:\/\/www.graphql-scalars.com\/date-time")
+
+"The `Long` scalar type represents non-fractional signed whole 64-bit numeric values. Long can represent values between -(2^63) and 2^63 - 1."
+scalar Long
+
+"The NonNegativeInt scalar type represents a unsigned 32-bit numeric non-fractional value equal to or greater than 0."
+scalar NonNegativeInt
+
+"The `Short` scalar type represents non-fractional signed whole 16-bit numeric values. Short can represent values between -(2^15) and 2^15 - 1."
+scalar Short
+
+scalar URL @specifiedBy(url: "https:\/\/tools.ietf.org\/html\/rfc3986")
+
+scalar UUID @specifiedBy(url: "https:\/\/tools.ietf.org\/html\/rfc4122")
+
+"The UnsignedInt scalar type represents a unsigned 32-bit numeric non-fractional value greater than or equal to 0."
+scalar UnsignedInt
+
+"The UnsignedLong scalar type represents a unsigned 64-bit numeric non-fractional value greater than or equal to 0."
+scalar UnsignedLong
+
+"The UnsignedShort scalar type represents a unsigned 16-bit numeric non-fractional value greater than or equal to 0."
+scalar UnsignedShort

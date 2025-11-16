@@ -47,9 +47,24 @@ export const MONTHLY_QUERY = `
 `;
 
 // Fetch character info by ID (career, level, renownRank)
-export async function fetchCharacterInfo(id: number | string, options?: { signal?: AbortSignal }): Promise<{ id: string | number; name?: string; career?: string; level?: number; renownRank?: number } | null> {
-  const query = `
+export async function fetchCharacterInfo(
+  id: number | string,
+  options?: { signal?: AbortSignal }
+): Promise<{ id: string | number; name?: string; career?: string; level?: number; renownRank?: number; guild?: { id?: string | number; name?: string } } | null> {
+  const queryWithGuild = `
     query CharacterInfo($id: ID!) {
+      character(id: $id) {
+        id
+        name
+        career
+        level
+        renownRank
+        guildMembership { guild { id name } }
+      }
+    }
+  `;
+  const queryNoGuild = `
+    query CharacterInfoNoGuild($id: ID!) {
       character(id: $id) {
         id
         name
@@ -59,13 +74,23 @@ export async function fetchCharacterInfo(id: number | string, options?: { signal
       }
     }
   `;
+  // Try with guild first; if schema doesn't support it, fall back without guild
   try {
-    const data = await gql<any>(query, { id: String(id) }, { signal: options?.signal });
+  const data = await gql<any>(queryWithGuild, { id: String(id) }, { signal: options?.signal });
     const c = data?.character;
     if (!c) return null;
-    return { id: c.id, name: c.name, career: c.career, level: c.level, renownRank: c.renownRank };
+  const gm = c.guildMembership;
+  const g = gm?.guild;
+  return { id: c.id, name: c.name, career: c.career, level: c.level, renownRank: c.renownRank, guild: g ? { id: g.id, name: g.name } : undefined };
   } catch {
-    return null;
+    try {
+      const data = await gql<any>(queryNoGuild, { id: String(id) }, { signal: options?.signal });
+      const c = data?.character;
+      if (!c) return null;
+      return { id: c.id, name: c.name, career: c.career, level: c.level, renownRank: c.renownRank };
+    } catch {
+      return null;
+    }
   }
 }
 

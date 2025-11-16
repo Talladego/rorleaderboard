@@ -54,12 +54,19 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
     const local = `/icons/careers/${key}.png`;
     return `<img class="career-icon" src="${remote}" alt="${label}" title="${label}" onerror="this.onerror=null;this.src='${local}';" />`;
   }
-  function updateCharSummary(career?: string, level?: number, rr?: number) {
+  // Persist guild name once known to avoid being overwritten by later updates
+  let guildNameForHeader: string | undefined;
+  function updateCharSummary(career?: string, level?: number, rr?: number, guildName?: string) {
     const el = document.querySelector('#charModal .char-summary') as HTMLElement | null;
     if (!el) return;
+    if (typeof guildName === 'string' && guildName) guildNameForHeader = guildName;
     const icon = careerIconEl(career);
-    const cname = career ? ` — ${careerLabel(career)}` : '';
-  el.innerHTML = `${icon} <strong>${name}</strong>${cname} &nbsp; <span class="muted">Lvl ${level ?? '—'}, RR ${rr ?? '—'}</span>`;
+    const gname = guildNameForHeader;
+    const nameWithGuild = gname ? `<strong>${name}</strong> <span class="muted">(${gname})</span>` : `<strong>${name}</strong>`;
+    el.innerHTML = `
+      <div class="char-line1">${icon} ${nameWithGuild}</div>
+      <div class="char-line2 muted">Level ${level ?? '—'}, RR ${rr ?? '—'}</div>
+    `;
   }
 
   let __modalRenderGen = 0;
@@ -84,12 +91,15 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
   const baseCareer = row?.character?.career || careerHint;
   const level = row?.character?.level;
   const rr = row?.character?.renownRank;
-  const careerName = baseCareer ? careerLabel(baseCareer) : '';
+  // career label no longer shown in header
   const charIcon = careerIconEl(baseCareer);
 
     const header = `
       <div style="margin-bottom:.35rem;">
-        <div class="char-summary">${charIcon} <strong>${name}</strong>${careerName ? ` — ${careerName}` : ''} &nbsp; <span class="muted">Lvl ${level ?? '—'}, RR ${rr ?? '—'}</span></div>
+        <div class="char-summary">
+          <div class="char-line1">${charIcon} <strong>${name}</strong></div>
+          <div class="char-line2 muted">Level ${level ?? '—'}, RR ${rr ?? '—'}</div>
+        </div>
   <div id="qualifyNote" class="muted" style="text-align:center; margin:.2rem 0 .35rem; display:none; color:#ef4444;">Not on leaderboard for this period</div>
         <table class="vlined summary-table">
           <colgroup>
@@ -180,15 +190,17 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
   const sheetKindLabel = (currentPeriod === 'weekly') ? 'Weekly Score Sheet' : 'Monthly Score Sheet';
       modalTitleEl.innerHTML = `
         <div id="sheetLabel_m" class="sheet-label" style="position:absolute;left:0;top:50%;transform:translateY(-50%);font-size:.9rem;opacity:.9;">${sheetKindLabel}</div>
-        <div class="period-selector" id="modalPeriodSelector" style="margin-left:0;">
+        <div class="period-selector" id="modalPeriodSelector" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
           <button id="periodPrevBtn_m" class="nav-arrow" title="Previous">◀</button>
           <div id="modalPeriodTitle_m" class="period-title">${periodText}</div>
           <button id="periodNextBtn_m" class="nav-arrow" title="Next">▶</button>
         </div>
       `;
-      const titleWrap = (modalTitleEl as HTMLElement);
-      titleWrap.style.flex = '1'; titleWrap.style.display = 'flex'; titleWrap.style.position = 'relative';
-      titleWrap.style.alignItems = 'center'; titleWrap.style.justifyContent = 'center';
+  const titleWrap = (modalTitleEl as HTMLElement);
+  titleWrap.style.flex = '1'; titleWrap.style.display = 'flex'; titleWrap.style.position = 'static';
+  titleWrap.style.alignItems = 'center'; titleWrap.style.justifyContent = 'center';
+  const headerWrap = titleWrap.parentElement as HTMLElement | null;
+  if (headerWrap) headerWrap.style.position = 'relative';
       const prevM = document.getElementById('periodPrevBtn_m');
       const nextM = document.getElementById('periodNextBtn_m');
   prevM?.addEventListener('click', async () => { if (currentPeriod === 'weekly') adjustWeek(-1); else adjustMonth(-1); try { await renderModal(true); } catch {} });
@@ -199,13 +211,13 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
     // Initialize summary using baseCareer to keep icon visible even if not on leaderboard
     updateCharSummary(baseCareer, level, rr);
 
-    // Independently fetch character info by ID to populate career/level/RR even if not on leaderboard
+    // Independently fetch character info by ID to populate career/level/RR and Guild even if not on leaderboard
     (async () => {
       const info = await fetchCharacterInfo(charId, { signal: currentModalAbort?.signal } as any);
       if (modalSessionId !== currentModalSessionId) return;
       if (myGen !== __modalRenderGen) return;
       if (info) {
-        updateCharSummary(info.career, info.level, info.renownRank);
+        updateCharSummary(info.career, info.level, info.renownRank, info.guild?.name);
       }
     })();
 
