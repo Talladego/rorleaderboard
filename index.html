@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Leaderboard | RoR Planner</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div class="container">
+  <h1 class="table-title">Leaderboard</h1>
+
+    
+
+    <div id="errorBox" class="error" style="display:none"></div>
+
+    <div id="tableWrap" class="table-wrap">
+      
+      <table class="tbl header">
+        <colgroup>
+          <col style="width:42px;" />
+          <col />
+          <col style="width:96px;" />
+          <col style="width:96px;" />
+          <col style="width:96px;" />
+          <col style="width:96px;" />
+          <col style="width:96px;" />
+          <col style="width:96px;" />
+        </colgroup>
+        <thead>
+          <tr class="group-row">
+            <th colspan="5">
+              <div class="period-selector">
+                <button id="periodPrevBtn" class="nav-arrow" title="Previous">◀</button>
+                <div id="periodTitle" class="period-title">&nbsp;</div>
+                <button id="periodNextBtn" class="nav-arrow" title="Next">▶</button>
+                <div class="agg-control" id="aggControl">
+                  <label for="aggSelect">Aggregate by</label>
+                  <select id="aggSelect">
+                    <option value="months">Months</option>
+                    <option value="weeks">Weeks</option>
+                  </select>
+                </div>
+              </div>
+            </th>
+            <th colspan="3" class="lifetime-group"><div class="lifetime-title">Lifetime</div></th>
+          </tr>
+          <tr>
+            <th class="rank">#</th>
+            <th class="sortable" data-field="name">Character <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
+            <th class="num sortable" data-field="kills">Kills <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
+            <th class="num sortable" data-field="deaths">Deaths <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
+            <th class="num sortable" data-field="kd">K/D <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
+            <th class="num lifetime sortable" data-field="allKills">Kills <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
+            <th class="num lifetime sortable" data-field="allDeaths">Deaths <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
+            <th class="num lifetime sortable" data-field="allKd">K/D <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
+          </tr>
+        </thead>
+      </table>
+      
+      <div id="tableBodyWrap" class="table-body-wrap">
+        <table class="tbl body">
+          <colgroup>
+            <col style="width:42px;" />
+            <col />
+            <col style="width:96px;" />
+            <col style="width:96px;" />
+            <col style="width:96px;" />
+            <col style="width:96px;" />
+            <col style="width:96px;" />
+            <col style="width:96px;" />
+          </colgroup>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      
+      <table class="tbl footer">
+        <colgroup>
+          <col style="width:42px;" />
+          <col />
+          <col style="width:96px;" />
+          <col style="width:96px;" />
+          <col style="width:96px;" />
+          <col style="width:96px;" />
+          <col style="width:96px;" />
+          <col style="width:96px;" />
+        </colgroup>
+        <tfoot>
+          <tr>
+            <td colspan="5" class="period-footer" style="padding:.55rem .7rem;">
+              <div style="display:flex;gap:.5rem;justify-content:center;align-items:center;flex-wrap:wrap;">
+                <button type="button" class="mode-btn" data-mode="monthly">Month</button>
+                <button type="button" class="mode-btn" data-mode="weekly">Week</button>
+                <button type="button" id="currentBtn" class="current-btn" title="Jump to current period">Current</button>
+              </div>
+            </td>
+            <td colspan="3" class="lifetime-footer" style="padding:.55rem .7rem;text-align:right;">
+              <span id="status" class="muted"></span>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal for character details -->
+  <div id="charModal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:50;">
+    <div data-overlay style="position:absolute;inset:0;background:#000a;"></div>
+    <div role="dialog" aria-modal="true" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#0f1216;color:#e5e7eb;border:1px solid #334155;border-radius:12px;min-width:300px;max-width:90vw;max-height:85vh;overflow:auto;box-shadow:0 10px 30px #0008;">
+      <div style="display:flex;align-items:center;gap:.75rem;padding:.9rem 1rem;border-bottom:1px solid #1f2937;">
+        <div id="charModalTitle" style="font-weight:600;font-size:1rem;">Character</div>
+        <button id="charModalClose" style="margin-left:auto;padding:.4rem .7rem;border-radius:.5rem;border:1px solid #475569;background:#1f2937;color:#e5e7eb;cursor:pointer;">Close</button>
+      </div>
+      <div id="charModalBody" style="padding:1rem;">
+        <div class="muted">Loading details…</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
