@@ -79,21 +79,11 @@ export function syncColumnWidths() {
   });
 }
 
-export function adjustScrolling(tbody: HTMLElement) {
+export function adjustScrolling(_tbody: HTMLElement) {
   const bodyWrap = document.getElementById('tableBodyWrap') as HTMLElement | null;
   if (!bodyWrap) return;
-  const rowCount = (tbody as HTMLTableSectionElement)?.rows?.length || 0;
-  const currentPeriod = (document.documentElement.getAttribute('data-current-period') || '') as 'weekly'|'monthly'|'yearly';
-  if (currentPeriod === 'yearly' && rowCount > 20) {
-    const firstRow = tbody.querySelector('tr') as HTMLElement | null;
-    if (!firstRow) { bodyWrap.style.maxHeight = ''; return; }
-    const rowH = firstRow.getBoundingClientRect().height || 28;
-    const maxVisibleRows = 20;
-    const bodyMax = Math.ceil(rowH * maxVisibleRows);
-    bodyWrap.style.maxHeight = bodyMax + 'px';
-  } else {
-    bodyWrap.style.maxHeight = '';
-  }
+  // Yearly mode removed — always auto-size height
+  bodyWrap.style.maxHeight = '';
 }
 
 export function updateSortHeaderState(sortField: SortField, sortDir: SortDir) {

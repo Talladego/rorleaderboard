@@ -68,11 +68,7 @@ export function monthStartUTC(year: number, month1: number): Date {
   return new Date(Date.UTC(year, month1 - 1, 1, 0, 0, 0));
 }
 
-export function yearStartUTC(year: number): Date {
-  return new Date(Date.UTC(year, 0, 1, 0, 0, 0));
-}
-
-export function getPeriodBounds(period: 'weekly'|'monthly'|'yearly', ctx: { weeklyYear: number; weeklyWeek: number; monthlyYear: number; monthlyMonth: number; yearlyYear: number }): { fromIso: string; toIso: string } {
+export function getPeriodBounds(period: 'weekly'|'monthly', ctx: { weeklyYear: number; weeklyWeek: number; monthlyYear: number; monthlyMonth: number }): { fromIso: string; toIso: string } {
   if (period === 'weekly') {
     const from = isoWeekStartUTC(ctx.weeklyYear, ctx.weeklyWeek);
     const to = new Date(from); to.setUTCDate(from.getUTCDate() + 7);
@@ -83,7 +79,8 @@ export function getPeriodBounds(period: 'weekly'|'monthly'|'yearly', ctx: { week
     const to = monthStartUTC(ctx.monthlyYear + Math.floor(ctx.monthlyMonth / 12), ((ctx.monthlyMonth % 12) + 1));
     return { fromIso: from.toISOString(), toIso: to.toISOString() };
   }
-  const from = yearStartUTC(ctx.yearlyYear);
-  const to = yearStartUTC(ctx.yearlyYear + 1);
+  // Default fallback (should not happen): return monthly bounds for safety
+  const from = monthStartUTC(ctx.monthlyYear, ctx.monthlyMonth);
+  const to = monthStartUTC(ctx.monthlyYear + Math.floor(ctx.monthlyMonth / 12), ((ctx.monthlyMonth % 12) + 1));
   return { fromIso: from.toISOString(), toIso: to.toISOString() };
 }

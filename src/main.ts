@@ -55,7 +55,7 @@ async function openScoreSheet(charId: number, name: string) {
   let __modalRenderGen = 0;
   async function renderModal(fullScan = false) {
     const myGen = ++__modalRenderGen;
-    let { fromIso, toIso } = getPeriodBounds(currentPeriod, { weeklyYear, weeklyWeek, monthlyYear, monthlyMonth, yearlyYear });
+    let { fromIso, toIso } = getPeriodBounds(currentPeriod, { weeklyYear, weeklyWeek, monthlyYear, monthlyMonth });
     const startedAt = (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
     let victims: Array<{ id: number|string; name: string; career?: string; count: number }> = [];
@@ -66,7 +66,6 @@ async function openScoreSheet(charId: number, name: string) {
     let killersCareers: Array<{ career: string; count: number }> = [];
 
     const periodText = (() => {
-      if (currentPeriod === 'yearly') return `Year ${yearlyYear}`;
       if (currentPeriod === 'monthly') { const date = new Date(Date.UTC(monthlyYear, monthlyMonth - 1, 1)); const monthName = date.toLocaleString(undefined, { month: 'long' }); return `${monthName} ${monthlyYear}`; }
       return `Week ${weeklyWeek}, ${weeklyYear}`;
     })();
@@ -155,32 +154,22 @@ async function openScoreSheet(charId: number, name: string) {
 
     const modalTitleEl = document.getElementById('charModalTitle');
     if (modalTitleEl) {
-      const showAgg = (document.documentElement.getAttribute('data-current-period') || currentPeriod) === 'yearly';
-      const sheetKindLabel = (currentPeriod === 'weekly') ? 'Weekly Score Sheet' : (currentPeriod === 'monthly') ? 'Monthly Score Sheet' : 'Score Sheet';
+      const sheetKindLabel = (currentPeriod === 'weekly') ? 'Weekly Score Sheet' : 'Monthly Score Sheet';
       modalTitleEl.innerHTML = `
         <div id="sheetLabel_m" class="sheet-label" style="position:absolute;left:0;top:50%;transform:translateY(-50%);font-size:.9rem;opacity:.9;">${sheetKindLabel}</div>
         <div class="period-selector" id="modalPeriodSelector" style="margin-left:0;">
           <button id="periodPrevBtn_m" class="nav-arrow" title="Previous">◀</button>
           <div id="modalPeriodTitle_m" class="period-title">${periodText}</div>
           <button id="periodNextBtn_m" class="nav-arrow" title="Next">▶</button>
-          <div class="agg-control" id="aggControl_m" style="${showAgg ? '' : 'display:none;'}">
-            <label for="aggSelect_m">Aggregate by</label>
-            <select id="aggSelect_m">
-              <option value="months">Months</option>
-              <option value="weeks">Weeks</option>
-            </select>
-          </div>
         </div>
       `;
       const titleWrap = (modalTitleEl as HTMLElement);
       titleWrap.style.flex = '1'; titleWrap.style.display = 'flex'; titleWrap.style.position = 'relative';
       titleWrap.style.alignItems = 'center'; titleWrap.style.justifyContent = 'center';
-      const aggSel = document.getElementById('aggSelect_m') as HTMLSelectElement | null;
-      if (aggSel) { aggSel.value = yearlyAggregation; aggSel.onchange = () => { const val = aggSel.value === 'weeks' ? 'weeks' : 'months'; if (val !== yearlyAggregation) { yearlyAggregation = val as any; renderModal(true); } }; }
       const prevM = document.getElementById('periodPrevBtn_m');
       const nextM = document.getElementById('periodNextBtn_m');
-      prevM?.addEventListener('click', async () => { if (currentPeriod === 'weekly') adjustWeek(-1); else if (currentPeriod === 'monthly') adjustMonth(-1); else adjustYear(-1); try { await renderModal(true); } catch {} });
-      nextM?.addEventListener('click', async () => { if (currentPeriod === 'weekly') adjustWeek(1); else if (currentPeriod === 'monthly') adjustMonth(1); else adjustYear(1); try { await renderModal(true); } catch {} });
+      prevM?.addEventListener('click', async () => { if (currentPeriod === 'weekly') adjustWeek(-1); else adjustMonth(-1); try { await renderModal(true); } catch {} });
+      nextM?.addEventListener('click', async () => { if (currentPeriod === 'weekly') adjustWeek(1); else adjustMonth(1); try { await renderModal(true); } catch {} });
     }
 
     setModalBody(header + grid);
@@ -202,7 +191,7 @@ async function openScoreSheet(charId: number, name: string) {
     })();
 
     const setTextClass = (id: string, text: string, isPos?: boolean|null) => { const el = document.getElementById(id); if (!el) return; el.textContent = text; el.classList.remove('pos','neg'); if (isPos != null) el.classList.add(isPos ? 'pos' : 'neg'); };
-    const formatPeriodShort = (): string => { if (currentPeriod === 'weekly') return `Week ${weeklyWeek}`; if (currentPeriod === 'monthly') { const date = new Date(Date.UTC(monthlyYear, monthlyMonth - 1, 1)); const monthName = date.toLocaleString(undefined, { month: 'long' }); return `${monthName} ${monthlyYear}`; } return `${yearlyYear}`; };
+  const formatPeriodShort = (): string => { if (currentPeriod === 'weekly') return `Week ${weeklyWeek}`; const date = new Date(Date.UTC(monthlyYear, monthlyMonth - 1, 1)); const monthName = date.toLocaleString(undefined, { month: 'long' }); return `${monthName} ${monthlyYear}`; };
     const setQualifyNote = (visible: boolean) => { const el = document.getElementById('qualifyNote') as HTMLElement | null; if (!el) return; if (visible) { el.textContent = `Not on leaderboard for ${formatPeriodShort()} — showing event totals.`; el.style.display = ''; } else { el.style.display = 'none'; } };
     let periodSource: 'leaderboard' | 'events' | null = null;
 
@@ -298,9 +287,9 @@ function isoWeeksInYear(y: number) {
 
 // State
 const qs = new URLSearchParams(location.search);
-// Only support 'weekly' and 'monthly'; coerce any other (including 'yearly') to 'weekly'
+// Only support 'weekly' and 'monthly'; coerce any other to 'weekly'
 const qsPeriodRaw = (qs.get('period') || '').toLowerCase();
-let currentPeriod: 'weekly' | 'monthly' | 'yearly' = (qsPeriodRaw === 'monthly' || qsPeriodRaw === 'weekly') ? (qsPeriodRaw as any) : 'weekly';
+let currentPeriod: 'weekly' | 'monthly' = (qsPeriodRaw === 'monthly' || qsPeriodRaw === 'weekly') ? (qsPeriodRaw as any) : 'weekly';
 (document.documentElement as HTMLElement).setAttribute('data-current-period', currentPeriod);
 let sortField: SortField = 'kills';
 let sortDir: SortDir = 'desc';
@@ -319,16 +308,7 @@ let weeklyYear = Number(qs.get('year')) || getISOWeekYear(now);
 let weeklyWeek = Number(qs.get('week')) || getISOWeekLocal(now);
 let monthlyYear = Number(qs.get('year')) || now.getUTCFullYear();
 let monthlyMonth = Number(qs.get('month')) || now.getUTCMonth() + 1;
-let yearlyYear = Number(qs.get('year')) || now.getUTCFullYear();
-let yearlyAggregation: 'months' | 'weeks' = qs.get('yagg') === 'weeks' ? 'weeks' : 'months';
-const aggSelect = document.getElementById('aggSelect') as HTMLSelectElement | null;
-const aggControl = document.getElementById('aggControl') as HTMLElement | null;
-if (aggSelect) aggSelect.value = yearlyAggregation;
-
-function updateAggControlVisibility() {
-  if (!aggControl) return;
-  aggControl.style.display = currentPeriod === 'yearly' ? 'flex' : 'none';
-}
+// Yearly mode is removed; no aggregation controls
 
 // Expose probe helpers in the browser console for ad-hoc analysis
 (window as any).probeDefault_2495885 = probeDefault_2495885;
@@ -374,7 +354,6 @@ document.addEventListener('click', async (ev) => {
 let currentRows: Row[] = [];
 const lifetimeCache: Map<string | number, LifetimeStats> = new Map();
 let lifetimeGeneration = 0;
-let yearlyAllRows: Row[] = [];
 
 function updateCurrentButtonState() {
   if (!currentBtn) return;
@@ -386,17 +365,13 @@ function updateCurrentButtonState() {
     isCurrent = (weeklyWeek === curW) && (weeklyYear === curY);
   } else if (currentPeriod === 'monthly') {
     isCurrent = (monthlyYear === nowD.getUTCFullYear()) && (monthlyMonth === (nowD.getUTCMonth() + 1));
-  } else if (currentPeriod === 'yearly') {
-    isCurrent = (yearlyYear === nowD.getUTCFullYear());
   }
   currentBtn.classList.toggle('active', !!isCurrent);
 }
 
 function updatePeriodTitle() {
   if (!periodTitle) return;
-  if (currentPeriod === 'yearly') {
-    periodTitle.textContent = `Year ${yearlyYear}`;
-  } else if (currentPeriod === 'monthly') {
+  if (currentPeriod === 'monthly') {
     const date = new Date(Date.UTC(monthlyYear, monthlyMonth - 1, 1));
     const monthName = date.toLocaleString(undefined, { month: 'long' });
     periodTitle.textContent = `${monthName} ${monthlyYear}`;
@@ -404,7 +379,6 @@ function updatePeriodTitle() {
     periodTitle.textContent = `Week ${weeklyWeek}, ${weeklyYear}`;
   }
   updateCurrentButtonState();
-  updateAggControlVisibility();
 }
 
 function updateUrl() {
@@ -420,18 +394,13 @@ function updateUrl() {
     u.searchParams.set('month', String(monthlyMonth));
     u.searchParams.delete('week');
     u.searchParams.delete('yagg');
-  } else {
-    u.searchParams.set('year', String(yearlyYear));
-    u.searchParams.delete('week');
-    u.searchParams.delete('month');
-    u.searchParams.set('yagg', yearlyAggregation);
   }
   if (sortField) u.searchParams.set('sort', sortField); else u.searchParams.delete('sort');
   if (sortDir) u.searchParams.set('dir', sortDir); else u.searchParams.delete('dir');
   history.replaceState(null, '', u);
 }
 
-function setMode(mode: 'weekly'|'monthly'|'yearly') {
+function setMode(mode: 'weekly'|'monthly') {
   if (mode === currentPeriod) return;
   currentPeriod = mode;
   (document.documentElement as HTMLElement).setAttribute('data-current-period', currentPeriod);
@@ -448,8 +417,6 @@ function goToCurrent() {
   } else if (currentPeriod === 'monthly') {
     monthlyYear = nowD.getUTCFullYear();
     monthlyMonth = nowD.getUTCMonth() + 1;
-  } else if (currentPeriod === 'yearly') {
-    yearlyYear = nowD.getUTCFullYear();
   }
   updatePeriodTitle();
   fetchAndRender();
@@ -477,18 +444,11 @@ function adjustMonth(delta: number) {
   fetchAndRender();
 }
 
-function adjustYear(delta: number) {
-  yearlyYear += delta;
-  if (yearlyYear < 2008) yearlyYear = 2008; if (yearlyYear > 2100) yearlyYear = 2100;
-  updatePeriodTitle();
-  fetchAndRender();
-}
-
 async function fetchAndRender(ev?: Event) {
   ev?.preventDefault();
   clearError(); setBusy(true);
   const period = currentPeriod;
-  const year = period === 'weekly' ? weeklyYear : period === 'monthly' ? monthlyYear : yearlyYear;
+  const year = period === 'weekly' ? weeklyYear : monthlyYear;
   try {
     let rows: Row[] = [];
     if (period === 'weekly') {
@@ -501,57 +461,13 @@ async function fetchAndRender(ev?: Event) {
       if (!(month >= 1 && month <= 12)) { showError('Invalid month (1-12).'); return; }
       const data = await gql<any>(MONTHLY_QUERY, { year, month });
       rows = (data?.monthlyKillLeaderboard || []) as Row[];
-    } else {
-      // Yearly aggregation across weeks or months
-      const nowD = new Date();
-      const currentISOYear = getISOWeekYear(nowD);
-      const aggregate = new Map<string|number, { character?: Row['character']; kills: number; deaths: number }>();
-      if (yearlyAggregation === 'weeks') {
-        const lastWeek = (year === currentISOYear) ? getISOWeek(nowD) : isoWeeksInYear(year);
-        for (let w = 1; w <= lastWeek; w++) {
-          if (status) status.textContent = `Loading… (week ${w}/${lastWeek})`;
-          try {
-            const d = await gql<any>(WEEKLY_QUERY, { year, week: w });
-            const list = (d?.weeklyKillLeaderboard || []) as any[];
-            for (const entry of list) {
-              const id = entry.character?.id; if (!id) continue;
-              const prev = aggregate.get(id) || { character: entry.character, kills: 0, deaths: 0 };
-              prev.kills += entry.kills; prev.deaths += entry.deaths; aggregate.set(id, prev);
-            }
-          } catch {}
-        }
-      } else {
-        const currentYearUTC = nowD.getUTCFullYear();
-        const lastMonth = (year === currentYearUTC) ? (nowD.getUTCMonth() + 1) : 12;
-        for (let m = 1; m <= lastMonth; m++) {
-          if (status) status.textContent = `Loading… (month ${m}/${lastMonth})`;
-          try {
-            const d = await gql<any>(MONTHLY_QUERY, { year, month: m });
-            const list = (d?.monthlyKillLeaderboard || []) as any[];
-            for (const entry of list) {
-              const id = entry.character?.id; if (!id) continue;
-              const prev = aggregate.get(id) || { character: entry.character, kills: 0, deaths: 0 };
-              prev.kills += entry.kills; prev.deaths += entry.deaths; aggregate.set(id, prev);
-            }
-          } catch {}
-        }
-      }
-      yearlyAllRows = Array.from(aggregate.values()).map((v) => ({ rank: 0, kills: v.kills, deaths: v.deaths, character: v.character }));
-      rows = yearlyAllRows.slice();
     }
 
     // Sort and rank
     const lifetimeGetter = (r: Row) => lifetimeCache.get(r.character?.id ?? '') || { kills: 0, deaths: 0, kd: 0 } as LifetimeStats;
-    let displayRows: Row[];
-    if (period === 'yearly') {
-      const fullySorted = sortRows(yearlyAllRows, sortField, sortDir, lifetimeGetter);
-      fullySorted.forEach((r, i) => r.rank = i + 1);
-      displayRows = fullySorted;
-    } else {
-      const sorted = sortRows(rows, sortField, sortDir, lifetimeGetter);
-      sorted.forEach((r, i) => r.rank = i + 1);
-      displayRows = sorted;
-    }
+    const sorted = sortRows(rows, sortField, sortDir, lifetimeGetter);
+    sorted.forEach((r, i) => r.rank = i + 1);
+    const displayRows: Row[] = sorted;
     currentRows = displayRows.slice();
     if (tbody) renderRows(displayRows, tbody);
 
@@ -604,30 +520,25 @@ function applySort(field: SortField) {
   updateSortHeaderState(sortField, sortDir);
   updateUrl();
   const lifetimeGetter = (r: Row) => lifetimeCache.get(r.character?.id ?? '') || { kills: 0, deaths: 0, kd: 0 } as LifetimeStats;
-  if (currentPeriod === 'yearly') {
-    const fullySorted = sortRows(yearlyAllRows, sortField, sortDir, lifetimeGetter);
-    fullySorted.forEach((r, i) => r.rank = i + 1);
-    currentRows = fullySorted.slice();
-    if (tbody) renderRows(fullySorted, tbody);
-    if (tbody) populateLifetimeCells(tbody, lifetimeCache);
-  } else {
-    const base = currentRows.map((r) => r);
-    const resorted = sortRows(base, sortField, sortDir, lifetimeGetter);
-    resorted.forEach((r, i) => r.rank = i + 1);
-    currentRows = resorted.slice();
-    if (tbody) renderRows(resorted, tbody);
-    if (tbody) populateLifetimeCells(tbody, lifetimeCache);
-  }
+  const base = currentRows.map((r) => r);
+  const resorted = sortRows(base, sortField, sortDir, lifetimeGetter);
+  resorted.forEach((r, i) => r.rank = i + 1);
+  currentRows = resorted.slice();
+  if (tbody) renderRows(resorted, tbody);
+  if (tbody) populateLifetimeCells(tbody, lifetimeCache);
 }
 
 // Wire up header sorters, mode buttons, current button, and period arrows
 document.querySelectorAll('th.sortable').forEach((th) => th.addEventListener('click', () => applySort((th as HTMLElement).getAttribute('data-field') as SortField)));
-document.querySelectorAll<HTMLElement>('.mode-btn').forEach((btn) => btn.addEventListener('click', () => setMode((btn.dataset.mode as any) || 'weekly')));
+document.querySelectorAll<HTMLElement>('.mode-btn').forEach((btn) => btn.addEventListener('click', () => {
+  const mode = (btn.dataset.mode as 'weekly'|'monthly'|undefined);
+  if (!mode || (mode !== 'weekly' && mode !== 'monthly')) return;
+  setMode(mode);
+}));
 document.querySelectorAll<HTMLElement>('.mode-btn').forEach((b) => b.classList.toggle('active', (b.dataset.mode as any) === currentPeriod));
 currentBtn?.addEventListener('click', goToCurrent);
-periodPrevBtn?.addEventListener('click', () => { if (currentPeriod === 'weekly') adjustWeek(-1); else if (currentPeriod === 'monthly') adjustMonth(-1); else adjustYear(-1); });
-periodNextBtn?.addEventListener('click', () => { if (currentPeriod === 'weekly') adjustWeek(1); else if (currentPeriod === 'monthly') adjustMonth(1); else adjustYear(1); });
-aggSelect?.addEventListener('change', () => { const val = (aggSelect!.value === 'weeks' ? 'weeks' : 'months'); if (val !== yearlyAggregation) { yearlyAggregation = val as any; updateUrl(); fetchAndRender(); } });
+periodPrevBtn?.addEventListener('click', () => { if (currentPeriod === 'weekly') adjustWeek(-1); else adjustMonth(-1); });
+periodNextBtn?.addEventListener('click', () => { if (currentPeriod === 'weekly') adjustWeek(1); else adjustMonth(1); });
 
 // Initial render
 updatePeriodTitle();
