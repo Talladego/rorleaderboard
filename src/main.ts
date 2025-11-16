@@ -22,7 +22,8 @@ let currentModalSessionId = 0;
 let currentModalAbort: AbortController | null = null;
 
 // Reusable: open the score sheet modal for a given character id and name (same period)
-async function openScoreSheet(charId: number, name: string) {
+// Optional careerHint helps when opening from modal lists where the char may not be on the leaderboard rows.
+async function openScoreSheet(charId: number, name: string, careerHint?: string) {
   try { currentModalAbort?.abort(); } catch {}
   currentModalAbort = new AbortController();
   const modalSessionId = ++currentModalSessionId;
@@ -70,11 +71,12 @@ async function openScoreSheet(charId: number, name: string) {
       return `Week ${weeklyWeek}, ${weeklyYear}`;
     })();
 
-    const row = currentRows.find(r => Number(r.character?.id) === charId);
-    const level = row?.character?.level;
-    const rr = row?.character?.renownRank;
-    const careerName = row?.character?.career ? careerLabel(row.character.career) : '';
-    const charIcon = careerIconEl(row?.character?.career);
+  const row = currentRows.find(r => Number(r.character?.id) === charId);
+  const baseCareer = row?.character?.career || careerHint;
+  const level = row?.character?.level;
+  const rr = row?.character?.renownRank;
+  const careerName = baseCareer ? careerLabel(baseCareer) : '';
+  const charIcon = careerIconEl(baseCareer);
 
     const header = `
       <div style="margin-bottom:.35rem;">
@@ -122,7 +124,7 @@ async function openScoreSheet(charId: number, name: string) {
         } else {
           const label = String(x.name || 'Unknown');
           const diffVal = typeof x.diff === 'number' ? x.diff : 0; const diffClass = diffVal > 0 ? 'pos' : (diffVal < 0 ? 'neg' : '');
-          const clickable = x.id != null ? `<a href="#" class="open-score-sheet" data-char-id="${x.id}" data-char-name="${label}">${label}</a>` : `<span>${label}</span>`;
+          const clickable = x.id != null ? `<a href="#" class="open-score-sheet" data-char-id="${x.id}" data-char-name="${label}"${x.career ? ` data-career="${String(x.career)}"` : ''}>${label}</a>` : `<span>${label}</span>`;
           return `<tr><td>${careerIconEl(x.career)} <span>${clickable}</span></td><td class="num ${countClass}">${x.count}</td>${showDiff ? `<td class="num ${diffClass}">${signed(x.diff)}</td>` : ''}</tr>`;
         }
       }).join('');
@@ -154,7 +156,7 @@ async function openScoreSheet(charId: number, name: string) {
 
     const modalTitleEl = document.getElementById('charModalTitle');
     if (modalTitleEl) {
-      const sheetKindLabel = (currentPeriod === 'weekly') ? 'Weekly Score Sheet' : 'Monthly Score Sheet';
+  const sheetKindLabel = (currentPeriod === 'weekly') ? 'Weekly Score Sheet' : 'Monthly Score Sheet';
       modalTitleEl.innerHTML = `
         <div id="sheetLabel_m" class="sheet-label" style="position:absolute;left:0;top:50%;transform:translateY(-50%);font-size:.9rem;opacity:.9;">${sheetKindLabel}</div>
         <div class="period-selector" id="modalPeriodSelector" style="margin-left:0;">
@@ -168,8 +170,8 @@ async function openScoreSheet(charId: number, name: string) {
       titleWrap.style.alignItems = 'center'; titleWrap.style.justifyContent = 'center';
       const prevM = document.getElementById('periodPrevBtn_m');
       const nextM = document.getElementById('periodNextBtn_m');
-      prevM?.addEventListener('click', async () => { if (currentPeriod === 'weekly') adjustWeek(-1); else adjustMonth(-1); try { await renderModal(true); } catch {} });
-      nextM?.addEventListener('click', async () => { if (currentPeriod === 'weekly') adjustWeek(1); else adjustMonth(1); try { await renderModal(true); } catch {} });
+  prevM?.addEventListener('click', async () => { if (currentPeriod === 'weekly') adjustWeek(-1); else adjustMonth(-1); try { await renderModal(true); } catch {} });
+  nextM?.addEventListener('click', async () => { if (currentPeriod === 'weekly') adjustWeek(1); else adjustMonth(1); try { await renderModal(true); } catch {} });
     }
 
     setModalBody(header + grid);
@@ -218,7 +220,7 @@ async function openScoreSheet(charId: number, name: string) {
     try {
       await fetchTopOpponents(charId, {
         fromIso, toIso, fullScan,
-        realm: (() => { const c = row?.character?.career ? String(row.character.career).toLowerCase() : ''; const orderCareers = new Set([
+        realm: (() => { const c = (row?.character?.career || careerHint) ? String(row?.character?.career || careerHint).toLowerCase() : ''; const orderCareers = new Set([
           'iron_breaker','rune_priest','slayer','engineer','knight_of_the_blazing_sun','bright_wizard',
           'warrior_priest','shadow_warrior','witch_hunter','archmage','sword_master','white_lion'
         ]); if (!c) return undefined as any; return orderCareers.has(c) ? 0 : 1; })() as any,
@@ -340,10 +342,11 @@ document.addEventListener('click', async (ev) => {
   ev.preventDefault();
   const idStr = a.getAttribute('data-char-id');
   const nm = (a.getAttribute('data-char-name') || a.textContent || 'Character').trim();
+  const careerHint = a.getAttribute('data-career') || undefined;
   if (!idStr) return;
   const cid = Number(idStr);
   if (!Number.isFinite(cid)) return;
-  await openScoreSheet(cid, nm);
+  await openScoreSheet(cid, nm, careerHint);
 });
 
 // ---------------------------
