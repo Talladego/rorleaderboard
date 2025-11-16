@@ -85,6 +85,14 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
         <div class="char-summary">${charIcon} <strong>${name}</strong>${careerName ? ` — ${careerName}` : ''} &nbsp; <span class="muted">Lvl ${level ?? '—'}, RR ${rr ?? '—'}</span></div>
   <div id="qualifyNote" class="muted" style="text-align:center; margin:.2rem 0 .35rem; display:none; color:#ef4444;">Not on leaderboard for this period</div>
         <table class="vlined summary-table">
+          <colgroup>
+            <col style="width:16.66%" />
+            <col style="width:16.66%" />
+            <col style="width:16.66%" />
+            <col style="width:16.66%" />
+            <col style="width:16.66%" />
+            <col style="width:16.66%" />
+          </colgroup>
           <tbody>
             <tr>
               <th>Kills</th><th>Deaths</th><th>K/D</th><th class="lifetime">Lifetime Kills</th><th class="lifetime">Lifetime Deaths</th><th class="lifetime">Lifetime K/D</th>
@@ -130,9 +138,13 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
           return `<tr><td><span class="char-cell">${careerIconEl(x.career)} ${clickable}</span></td><td class="num ${countClass}">${x.count}</td>${showDiff ? `<td class="num ${diffClass}">${signed(x.diff)}</td>` : ''}</tr>`;
         }
       }).join('');
+      const colgroup = showDiff
+        ? `<colgroup><col /><col style="width:90px" /><col style="width:70px" /></colgroup>`
+        : `<colgroup><col /><col style="width:90px" /></colgroup>`;
       return `
         <div style="margin-top:.5rem;">
           <table class="list-table">
+            ${colgroup}
             <thead><tr><th>${title}</th><th class="num">${countLabel}</th>${showDiff ? '<th class="num">+/−</th>' : ''}</tr></thead>
             <tbody>
               ${rowsHtml}

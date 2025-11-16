@@ -107,6 +107,7 @@ th.rank, td.rank { text-align:left; width:42px; }
 
 /* Modal compact spacing to avoid scrollbars */
 #charModal [role="dialog"] { font-size: .95rem; }
+#charModal .modal-frame { width: 980px; max-width: 95vw; max-height: 98vh; top: 10vh !important; height: auto; transform: translateX(-50%) !important; }
 #charModal #charModalBody { padding: .6rem !important; }
 #charModal [role="dialog"] > div:nth-child(1) { padding: .5rem .6rem !important; }
 #charModal table { border-radius: .35rem; }
@@ -124,9 +125,16 @@ th.rank, td.rank { text-align:left; width:42px; }
 #charModal .list-table thead th { background: #1b2430; color: #e5e7eb; }
 #charModal .list-table tbody tr { background:#121417; }
 #charModal .list-table tbody tr:nth-child(even) { background:#171a1f; }
+#charModal .list-table { table-layout: fixed; }
+#charModal .list-table th:nth-child(2),
+#charModal .list-table td:nth-child(2) { width: 90px; }
+#charModal .list-table th:nth-child(3),
+#charModal .list-table td:nth-child(3) { width: 70px; }
+#charModal .list-table td:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Modal summary table: rounded frame and lighter header rows */
 #charModal .summary-table { border: 1px solid #334155; border-radius: 10px; overflow: hidden; background: #0f1216; }
+#charModal .summary-table { table-layout: fixed; }
 #charModal .summary-table tbody tr:first-child th,
 #charModal .summary-table tbody tr:first-child td { background: #1b2430; color: #e5e7eb; }
 #charModal .summary-table tbody tr:nth-child(2) th { background: #1b2430; color: #e5e7eb; }
