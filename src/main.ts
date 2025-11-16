@@ -22,6 +22,8 @@ initModal();
 // Modal: session management for aborting in-flight requests
 let currentModalSessionId = 0;
 let currentModalAbort: AbortController | null = null;
+let openCharId: number | null = null;
+let openCharName: string | null = null;
 
 // Reusable: open the score sheet modal for a given character id and name (same period)
 // Optional careerHint helps when opening from modal lists where the char may not be on the leaderboard rows.
@@ -29,6 +31,11 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
   try { currentModalAbort?.abort(); } catch {}
   currentModalAbort = new AbortController();
   const modalSessionId = ++currentModalSessionId;
+
+  // Track open character and reflect in URL so it is linkable
+  openCharId = Number(charId);
+  openCharName = String(name || 'Character');
+  updateUrl();
 
   openModal('', '');
   setModalLoading();
@@ -355,6 +362,8 @@ let monthlyMonth = Number(qs.get('month')) || now.getUTCMonth() + 1;
 
 // Abort active modal fetches when the modal closes
 onModalClose(() => { try { currentModalAbort?.abort(); } catch {} });
+// Also clear modal URL parameters on close
+onModalClose(() => { openCharId = null; openCharName = null; updateUrl(); });
 
 // Delegate clicks on the leaderboard table to open the score sheet
 tbody.addEventListener('click', async (e: Event) => {
@@ -437,6 +446,14 @@ function updateUrl() {
   }
   if (sortField) u.searchParams.set('sort', sortField); else u.searchParams.delete('sort');
   if (sortDir) u.searchParams.set('dir', sortDir); else u.searchParams.delete('dir');
+  // Reflect open score sheet in URL for deep-linking
+  if (openCharId != null) {
+    u.searchParams.set('char', String(openCharId));
+    if (openCharName) u.searchParams.set('name', openCharName);
+  } else {
+    u.searchParams.delete('char');
+    u.searchParams.delete('name');
+  }
   history.replaceState(null, '', u);
 }
 
@@ -605,4 +622,10 @@ nameInput?.addEventListener('keydown', (ev: KeyboardEvent) => {
 
 // Initial render
 updatePeriodTitle();
-fetchAndRender();
+const initialCharIdParam = (() => { const s = qs.get('char'); const n = s ? Number(s) : NaN; return Number.isFinite(n) ? n : null; })();
+const initialCharNameParam = qs.get('name') || null;
+fetchAndRender().then(async () => {
+  if (initialCharIdParam != null) {
+    try { await openScoreSheet(initialCharIdParam, initialCharNameParam || 'Character'); } catch {}
+  }
+});
