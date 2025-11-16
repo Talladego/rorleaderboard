@@ -652,7 +652,7 @@ tbody.addEventListener('click', async (e: Event) => {
   updateCharSummary(row?.character?.career, level, rr);
 
   // Update lifetime totals asynchronously
-    (async () => {
+  (async () => {
   let lifeKills = 0, lifeDeaths = 0, lifeKd = 0;
       let lifetime = lifetimeCache.get(charId) || null;
       if (!lifetime) {
@@ -742,7 +742,7 @@ tbody.addEventListener('click', async (e: Event) => {
           // Not on leaderboard; leave cells for events fallback to fill
           setQualifyNote(false);
         }
-      } catch (e) {
+      } catch {
         // Leave placeholders on failure
       }
     })();
@@ -801,15 +801,13 @@ tbody.addEventListener('click', async (e: Event) => {
       }).then(() => {
         // no-op: onProgress handled updates; final result ignored here
       });
-    } catch (_e) {
+    } catch {
       // If progress fetch fails, leave placeholders or show error in scanned info
       const scannedEl = document.getElementById('scannedInfo');
       if (scannedEl) scannedEl.innerHTML = `<div class="muted">Failed to load details for this period.</div>`;
     }
 
-    // Modal period navigation is now in the header (prev/next buttons with _m IDs)
-
-    // No manual button; deep scan starts automatically and progress shows in scannedInfo
+    
   }
 
   // Initial render (start with full period deep scan)

@@ -260,7 +260,7 @@ export async function fetchTopOpponents(
     const batch = 20;
     const batches: string[][] = [];
     for (let i=0;i<ids.length;i+=batch){ batches.push(ids.slice(i, i+batch)); }
-    let processed = 0;
+  // track processed batches only if needed for progress metrics (currently unused)
     const concurrency = 8;
     async function runOne(slice: string[]) {
       const infos = await fetchScenarioBatch(slice);
@@ -277,8 +277,7 @@ export async function fetchTopOpponents(
         if (!Number.isNaN(pt)) playerTeam = pt; else if (typeof opts.realm === 'number') playerTeam = opts.realm;
         if (playerTeam != null){ if (playerTeam === winnerTeam) wInc++; else lInc++; }
       }
-      scenarioWins += wInc; scenarioLosses += lInc;
-      processed++;
+  scenarioWins += wInc; scenarioLosses += lInc;
       scenarioPagesCounter += 1; // count batches processed as pages for progress
       emitProgress({ wins: scenarioWins, losses: scenarioLosses });
     }
@@ -430,13 +429,13 @@ export async function fetchTopOpponents(
       }
       await Promise.all(shardWorkers);
     }
-  } catch(_e){ killsRecent = killsRecent||[]; deathsRecent = deathsRecent||[]; }
+  } catch{ killsRecent = killsRecent||[]; deathsRecent = deathsRecent||[]; }
 
   if (enableScenarios) {
     const scenarioTally = new Map<string,{kills:number;deaths:number}>();
     for (const k of killsRecent){ const iid=String(k?.instance?.id||''); if(!iid) continue; const cur=scenarioTally.get(iid)||{kills:0,deaths:0}; cur.kills++; scenarioTally.set(iid,cur);} 
     for (const d of deathsRecent){ const iid=String(d?.instance?.id||''); if(!iid) continue; const cur=scenarioTally.get(iid)||{kills:0,deaths:0}; cur.deaths++; scenarioTally.set(iid,cur);} 
-    let fallbackWins=0,fallbackLosses=0; scenarioTally.forEach(v=>{ if(v.kills>v.deaths) fallbackWins++; else if(v.deaths>v.kills) fallbackLosses++; });
+    // possible fallback W/L by KD-only per-instance omitted as unused
   }
 
   // Compute scenario W/L strictly from scenario scores.
