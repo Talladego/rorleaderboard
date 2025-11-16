@@ -554,7 +554,6 @@ tbody.addEventListener('click', async (e: Event) => {
   const careerName = row?.character?.career ? careerLabel(row.character.career) : '';
   const charIcon = careerIconEl(row?.character?.career);
 
-    const sheetKindLabel = (currentPeriod === 'weekly') ? 'Weekly Score Sheet' : (currentPeriod === 'monthly') ? 'Monthly Score Sheet' : 'Score Sheet';
     const header = `
       <div style="margin-bottom:.35rem;">
         <div class="char-summary">${charIcon} <strong>${name}</strong>${careerName ? ` — ${careerName}` : ''} &nbsp; <span class="muted">Lvl ${level ?? '—'}, RR ${rr ?? '—'}</span></div>
