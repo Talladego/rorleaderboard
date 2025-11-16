@@ -189,7 +189,7 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
     if (modalTitleEl) {
   const sheetKindLabel = (currentPeriod === 'weekly') ? 'Weekly Score Sheet' : 'Monthly Score Sheet';
       modalTitleEl.innerHTML = `
-        <div id="sheetLabel_m" class="sheet-label" style="position:absolute;left:0;top:50%;transform:translateY(-50%);font-size:.9rem;opacity:.9;">${sheetKindLabel}</div>
+        <div id="sheetLabel_m" class="sheet-label" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:.9rem;opacity:.9;">${sheetKindLabel}</div>
         <div class="period-selector" id="modalPeriodSelector" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
           <button id="periodPrevBtn_m" class="nav-arrow" title="Previous">◀</button>
           <div id="modalPeriodTitle_m" class="period-title">${periodText}</div>
