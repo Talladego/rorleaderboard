@@ -140,6 +140,9 @@ th.rank, td.rank { text-align:left; width:42px; }
 #charModal .summary-table tbody tr:first-child td { background: #1b2430; color: #e5e7eb; }
 #charModal .summary-table tbody tr:nth-child(2) th { background: #1b2430; color: #e5e7eb; }
 #charModal .summary-table tbody tr:nth-child(3) th { background: #1b2430; color: #e5e7eb; }
+/* Make modal summary headers match leaderboard shades: period vs lifetime */
+#charModal .summary-table tbody tr:first-child th:not(.lifetime) { background: #181d22; }
+#charModal .summary-table tbody tr:first-child th.lifetime { background: #202b33; }
 /* Center-align summary headers and values */
 #charModal .summary-table th,
 #charModal .summary-table td { text-align: center; }

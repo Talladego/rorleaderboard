@@ -2,7 +2,7 @@ import { gql, WEEKLY_QUERY, MONTHLY_QUERY, fetchCharacterInfo, resolveCharacterB
 import { renderRows, populateLifetimeCells, updateSortHeaderState } from './ui/table';
 import { Row, SortDir, SortField, sortRows, getPeriodBounds, careerLabel, LifetimeStats } from './logic';
 import { initModal, openModal, setModalBody, setModalLoading, onModalClose } from './ui/modal';
-import { fetchLifetimeTotalsFor, fetchTopOpponents } from './api/graphql';
+import { fetchLifetimeTotalsFor, fetchTopOpponents, fetchLifetimeSoloKills } from './api/graphql';
 import { probeDefault_2495885, probeCharacterScenarios } from './api/scenarioProbe';
 
 // DOM refs
@@ -103,18 +103,20 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
   <div id="qualifyNote" class="muted" style="text-align:center; margin:.2rem 0 .35rem; display:none; color:#ef4444;">Not on leaderboard for this period</div>
         <table class="vlined summary-table">
           <colgroup>
-            <col style="width:12.5%" />
-            <col style="width:12.5%" />
-            <col style="width:12.5%" />
-            <col style="width:12.5%" />
-            <col style="width:12.5%" />
-            <col style="width:12.5%" />
-            <col style="width:12.5%" />
-            <col style="width:12.5%" />
+            <col style="width:10%" />
+            <col style="width:10%" />
+            <col style="width:10%" />
+            <col style="width:10%" />
+            <col style="width:10%" />
+            <col style="width:10%" />
+            <col style="width:10%" />
+            <col style="width:10%" />
+            <col style="width:10%" />
+            <col style="width:10%" />
           </colgroup>
           <tbody>
             <tr>
-              <th>Kills</th><th>Deaths</th><th>K/D</th><th>Solo Kills</th><th>Solo Kills %</th><th class="lifetime">Lifetime Kills</th><th class="lifetime">Lifetime Deaths</th><th class="lifetime">Lifetime K/D</th>
+              <th>Kills</th><th>Deaths</th><th>K/D</th><th>Solo Kills</th><th>Solo Kills %</th><th class="lifetime">Lifetime Kills</th><th class="lifetime">Lifetime Deaths</th><th class="lifetime">Lifetime K/D</th><th class="lifetime">Lifetime Solo Kills</th><th class="lifetime">Lifetime Solo Kills %</th>
             </tr>
             <tr>
               <td class="num"><span id="periodKillsCell">…</span></td>
@@ -125,6 +127,8 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
               <td class="num lifetime"><span id="totalKillsCell">…</span></td>
               <td class="num lifetime"><span id="totalDeathsCell">…</span></td>
               <td class="num lifetime"><span id="totalKdCell">…</span></td>
+              <td class="num lifetime"><span id="totalSoloKillsCell">…</span></td>
+              <td class="num lifetime"><span id="totalSoloPctCell">…</span></td>
             </tr>
           </tbody>
         </table>
@@ -226,7 +230,7 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
     })();
 
     (async () => {
-      let lifeKills = 0, lifeDeaths = 0, lifeKd = 0;
+      let lifeKills = 0, lifeDeaths = 0, lifeKd = 0, lifeSolo = 0;
       let lifetime = lifetimeCache.get(charId) || null;
       if (!lifetime) {
         try { const lt = await fetchLifetimeTotalsFor(charId, { signal: currentModalAbort?.signal }); lifetime = lt; lifetimeCache.set(charId, lt); }
@@ -234,6 +238,7 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
       }
       if (modalSessionId !== currentModalSessionId) return; if (myGen !== __modalRenderGen) return;
       lifeKills = lifetime?.kills ?? 0; lifeDeaths = lifetime?.deaths ?? 0; lifeKd = lifetime?.kd ?? 0;
+      try { lifeSolo = await fetchLifetimeSoloKills(charId, { signal: currentModalAbort?.signal }); } catch { lifeSolo = 0; }
       const setTextClass = (id: string, text: string, isPos?: boolean|null) => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -249,6 +254,9 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
       setTextClass('totalKillsCell', String(lifeKills), true);
       setTextClass('totalDeathsCell', String(lifeDeaths), false);
       setTextClass('totalKdCell', (lifeKd as number).toFixed(2), (lifeKd as number) >= 1);
+      setTextClass('totalSoloKillsCell', String(lifeSolo), true);
+      const lifePct = lifeKills > 0 ? Math.round((lifeSolo / lifeKills) * 100) : 0;
+      setTextClass('totalSoloPctCell', `${lifePct}%`, lifePct >= 50);
     })();
 
     const setTextClass = (id: string, text: string, isPos?: boolean|null) => { const el = document.getElementById(id); if (!el) return; el.textContent = text; el.classList.remove('pos','neg'); if (isPos != null) el.classList.add(isPos ? 'pos' : 'neg'); };
