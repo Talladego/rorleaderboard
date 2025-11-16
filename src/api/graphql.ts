@@ -600,3 +600,14 @@ export async function fetchKdTotalsForRange(id: number | string, fromSec: number
   const data = await gql<any>(query, { id: Number(id), from: Math.floor(fromSec), to: Math.floor(toSec) }, { signal: options?.signal });
   return { kills: data?.k?.totalCount ?? 0, deaths: data?.d?.totalCount ?? 0 };
 }
+
+// Fetch lifetime solo kills for a character (across all time)
+export async function fetchLifetimeSoloKills(id: number | string, options?: { signal?: AbortSignal }): Promise<number> {
+  const query = `
+    query LifetimeSolo($id: UnsignedInt!) {
+      s: kills(first: 1, soloOnly: true, where: { killerCharacterId: { eq: $id } }) { totalCount }
+    }
+  `;
+  const data = await gql<any>(query, { id: Number(id) }, { signal: options?.signal });
+  return data?.s?.totalCount ?? 0;
+}

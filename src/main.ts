@@ -103,21 +103,25 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
   <div id="qualifyNote" class="muted" style="text-align:center; margin:.2rem 0 .35rem; display:none; color:#ef4444;">Not on leaderboard for this period</div>
         <table class="vlined summary-table">
           <colgroup>
-            <col style="width:16.66%" />
-            <col style="width:16.66%" />
-            <col style="width:16.66%" />
-            <col style="width:16.66%" />
-            <col style="width:16.66%" />
-            <col style="width:16.66%" />
+            <col style="width:12.5%" />
+            <col style="width:12.5%" />
+            <col style="width:12.5%" />
+            <col style="width:12.5%" />
+            <col style="width:12.5%" />
+            <col style="width:12.5%" />
+            <col style="width:12.5%" />
+            <col style="width:12.5%" />
           </colgroup>
           <tbody>
             <tr>
-              <th>Kills</th><th>Deaths</th><th>K/D</th><th class="lifetime">Lifetime Kills</th><th class="lifetime">Lifetime Deaths</th><th class="lifetime">Lifetime K/D</th>
+              <th>Kills</th><th>Deaths</th><th>K/D</th><th>Solo Kills</th><th>Solo Kills %</th><th class="lifetime">Lifetime Kills</th><th class="lifetime">Lifetime Deaths</th><th class="lifetime">Lifetime K/D</th>
             </tr>
             <tr>
               <td class="num"><span id="periodKillsCell">…</span></td>
               <td class="num"><span id="periodDeathsCell">…</span></td>
               <td class="num"><span id="periodKdCell">…</span></td>
+              <td class="num"><span id="periodSoloKillsCell">…</span></td>
+              <td class="num"><span id="periodSoloPctCell">…</span></td>
               <td class="num lifetime"><span id="totalKillsCell">…</span></td>
               <td class="num lifetime"><span id="totalDeathsCell">…</span></td>
               <td class="num lifetime"><span id="totalKdCell">…</span></td>
@@ -248,6 +252,13 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
     })();
 
     const setTextClass = (id: string, text: string, isPos?: boolean|null) => { const el = document.getElementById(id); if (!el) return; el.textContent = text; el.classList.remove('pos','neg'); if (isPos != null) el.classList.add(isPos ? 'pos' : 'neg'); };
+    let periodKillsCount: number | null = null;
+    let periodSoloCount: number | null = null;
+    const updateSoloPct = () => {
+      if (periodKillsCount == null || periodSoloCount == null) return;
+      const pct = periodKillsCount > 0 ? (periodSoloCount / periodKillsCount) * 100 : 0;
+      setTextClass('periodSoloPctCell', `${Math.round(pct)}%`, pct >= 50);
+    };
   const formatPeriodShort = (): string => { if (currentPeriod === 'weekly') return `Week ${weeklyWeek}`; const date = new Date(Date.UTC(monthlyYear, monthlyMonth - 1, 1)); const monthName = date.toLocaleString(undefined, { month: 'long' }); return `${monthName} ${monthlyYear}`; };
   const setQualifyNote = (visible: boolean) => { const el = document.getElementById('qualifyNote') as HTMLElement | null; if (!el) return; if (visible) { el.textContent = `Not on leaderboard for ${formatPeriodShort()}`; el.style.display = ''; } else { el.style.display = 'none'; } };
     let periodSource: 'leaderboard' | 'events' | null = null;
@@ -263,13 +274,39 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
         const deathsVal = typeof found?.deaths === 'number' ? found.deaths : null;
         const kdVal = (typeof killsVal === 'number' && typeof deathsVal === 'number') ? (deathsVal > 0 ? (killsVal / deathsVal) : killsVal) : null;
         if (killsVal != null && deathsVal != null && kdVal != null) {
+          periodKillsCount = killsVal;
           setTextClass('periodKillsCell', String(killsVal), true);
+          // Solo kills not on leaderboard; will be filled by a separate query below
           setTextClass('periodDeathsCell', String(deathsVal), false);
           setTextClass('periodKdCell', kdVal.toFixed(2), kdVal >= 1);
+          updateSoloPct();
           periodSource = 'leaderboard'; setQualifyNote(false);
           if (found?.character) { updateCharSummary(found.character.career, found.character.level, found.character.renownRank); }
         } else { setQualifyNote(false); }
       } catch { /* ignore */ }
+    })();
+
+    // Fetch solo kills for the period using GraphQL kills(soloOnly: true) totalCount
+    (async () => {
+      try {
+        const fromTs = Math.floor(new Date(fromIso).getTime() / 1000);
+        const toTs = Math.floor(new Date(toIso).getTime() / 1000);
+        const SOLO_QUERY = `
+          query SoloKills($cid: UnsignedInt!, $from: Int!, $to: Int!) {
+            kills(soloOnly: true, where: { killerCharacterId: { eq: $cid }, time: { gte: $from, lt: $to } }) {
+              totalCount
+            }
+          }
+        `;
+        const data = await gql<any>(SOLO_QUERY, { cid: Number(charId), from: fromTs, to: toTs }, { signal: currentModalAbort?.signal });
+        if (modalSessionId !== currentModalSessionId) return; if (myGen !== __modalRenderGen) return;
+        const solo = Number(data?.kills?.totalCount ?? 0);
+        periodSoloCount = solo;
+        setTextClass('periodSoloKillsCell', String(solo), true);
+        updateSoloPct();
+      } catch {
+        // leave as ellipsis if failed
+      }
     })();
 
     try {
@@ -284,7 +321,7 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
         onProgress: (p) => {
           if (modalSessionId !== currentModalSessionId) return; if (myGen !== __modalRenderGen) return;
           victims = p.victims; killers = p.killers; guildsKilled = p.guildsKilled; careersKilled = p.careersKilled; killersGuilds = p.killersGuilds; killersCareers = p.killersCareers;
-          if (periodSource !== 'leaderboard') { const k = p.periodStats.kills || 0; const d = p.periodStats.deaths || 0; const kdNow = d > 0 ? (k / d) : k; setTextClass('periodKillsCell', String(k), true); setTextClass('periodDeathsCell', String(d), false); setTextClass('periodKdCell', kdNow.toFixed(2), kdNow >= 1); periodSource = 'events'; setQualifyNote(true); }
+          if (periodSource !== 'leaderboard') { const k = p.periodStats.kills || 0; const d = p.periodStats.deaths || 0; const kdNow = d > 0 ? (k / d) : k; periodKillsCount = k; setTextClass('periodKillsCell', String(k), true); setTextClass('periodDeathsCell', String(d), false); setTextClass('periodKdCell', kdNow.toFixed(2), kdNow >= 1); updateSoloPct(); periodSource = 'events'; setQualifyNote(true); }
           const mount = (id: string, html: string) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
           mount('victimsTable', tableList('Top Victims', victims, { kind: 'character', countLabel: 'Kills', showDiff: true, metric: 'kills' }));
           mount('guildsKilledTable', tableList('Top Guilds Killed', guildsKilled, { kind: 'guild', countLabel: 'Kills', metric: 'kills', showDiff: true }));
