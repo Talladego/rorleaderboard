@@ -46,6 +46,78 @@ export const MONTHLY_QUERY = `
   }
 `;
 
+// Fetch character info by ID (career, level, renownRank)
+export async function fetchCharacterInfo(id: number | string, options?: { signal?: AbortSignal }): Promise<{ id: string | number; name?: string; career?: string; level?: number; renownRank?: number } | null> {
+  const query = `
+    query CharacterInfo($id: ID!) {
+      character(id: $id) {
+        id
+        name
+        career
+        level
+        renownRank
+      }
+    }
+  `;
+  try {
+    const data = await gql<any>(query, { id: String(id) }, { signal: options?.signal });
+    const c = data?.character;
+    if (!c) return null;
+    return { id: c.id, name: c.name, career: c.career, level: c.level, renownRank: c.renownRank };
+  } catch {
+    return null;
+  }
+}
+
+// Try to resolve a character by exact name. Attempts multiple likely schema shapes to be robust.
+export async function resolveCharacterByName(name: string, options?: { signal?: AbortSignal }): Promise<{ id: string | number; name: string; career?: string; level?: number; renownRank?: number } | null> {
+  const nm = String(name).trim();
+  if (!nm) return null;
+  // Attempt 1: characters connection with where filter
+  const tryCharactersWhere = async () => {
+    const q = `
+      query FindByName($name: String!) {
+        characters(first: 1, where: { name: { eq: $name } }) {
+          nodes { id name career level renownRank }
+        }
+      }
+    `;
+    const data = await gql<any>(q, { name: nm }, { signal: options?.signal });
+    const node = data?.characters?.nodes?.[0];
+    if (node?.id) return { id: node.id, name: node.name || nm, career: node.career, level: node.level, renownRank: node.renownRank };
+    return null;
+  };
+  // Attempt 2: characterByName field
+  const tryCharacterByName = async () => {
+    const q = `
+      query FindByName2($name: String!) {
+        characterByName(name: $name) { id name career level renownRank }
+      }
+    `;
+    const data = await gql<any>(q, { name: nm }, { signal: options?.signal });
+    const node = data?.characterByName;
+    if (node?.id) return { id: node.id, name: node.name || nm, career: node.career, level: node.level, renownRank: node.renownRank };
+    return null;
+  };
+  // Attempt 3: characters connection without where, using query arg (fallback API shape)
+  const tryCharactersQuery = async () => {
+    const q = `
+      query FindByName3($name: String!) {
+        characters(first: 1, query: $name) { nodes { id name career level renownRank } }
+      }
+    `;
+    const data = await gql<any>(q, { name: nm }, { signal: options?.signal });
+    const node = data?.characters?.nodes?.[0];
+    if (node?.id) return { id: node.id, name: node.name || nm, career: node.career, level: node.level, renownRank: node.renownRank };
+    return null;
+  };
+  // Try attempts in order; ignore schema errors and continue
+  try { const r = await tryCharactersWhere(); if (r) return r; } catch {}
+  try { const r = await tryCharacterByName(); if (r) return r; } catch {}
+  try { const r = await tryCharactersQuery(); if (r) return r; } catch {}
+  return null;
+}
+
 // Fetch lifetime totals for a single character id
 export async function fetchLifetimeTotalsFor(id: number | string, options?: { signal?: AbortSignal }): Promise<{ kills: number; deaths: number; kd: number; scenarioWins: number; scenarioLosses: number }> {
   const query = `

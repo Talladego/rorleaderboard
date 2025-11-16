@@ -102,7 +102,8 @@ th.rank, td.rank { text-align:left; width:42px; }
 #status { font-size:.8rem; }
 
 /* Modal */
-.char-name { cursor:pointer; color:#60a5fa; }
+.char-name { cursor:pointer; color:#60a5fa; text-decoration: none; }
+.char-name:hover { text-decoration: underline; }
 
 /* Modal compact spacing to avoid scrollbars */
 #charModal [role="dialog"] { font-size: .95rem; }

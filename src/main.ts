@@ -1,4 +1,4 @@
-import { gql, WEEKLY_QUERY, MONTHLY_QUERY } from './api/graphql';
+import { gql, WEEKLY_QUERY, MONTHLY_QUERY, fetchCharacterInfo, resolveCharacterByName } from './api/graphql';
 import { renderRows, populateLifetimeCells, updateSortHeaderState } from './ui/table';
 import { Row, SortDir, SortField, sortRows, getPeriodBounds, careerLabel, LifetimeStats } from './logic';
 import { initModal, openModal, setModalBody, setModalLoading, onModalClose } from './ui/modal';
@@ -13,6 +13,8 @@ const currentBtn = document.getElementById('currentBtn') as HTMLButtonElement | 
 const periodPrevBtn = document.getElementById('periodPrevBtn') as HTMLButtonElement | null;
 const periodNextBtn = document.getElementById('periodNextBtn') as HTMLButtonElement | null;
 const tbody = document.getElementById('tbody') as HTMLElement | null;
+const nameInput = document.getElementById('nameInput') as HTMLInputElement | null;
+const showByNameBtn = document.getElementById('showByNameBtn') as HTMLButtonElement | null;
 
 if (!tbody) throw new Error('tbody not found');
 initModal();
@@ -81,7 +83,7 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
     const header = `
       <div style="margin-bottom:.35rem;">
         <div class="char-summary">${charIcon} <strong>${name}</strong>${careerName ? ` — ${careerName}` : ''} &nbsp; <span class="muted">Lvl ${level ?? '—'}, RR ${rr ?? '—'}</span></div>
-        <div id="qualifyNote" class="muted" style="text-align:center; margin:.2rem 0 .35rem; display:none; color:#ef4444;">Not on leaderboard for this period — showing event totals.</div>
+  <div id="qualifyNote" class="muted" style="text-align:center; margin:.2rem 0 .35rem; display:none; color:#ef4444;">Not on leaderboard for this period</div>
         <table class="vlined summary-table">
           <tbody>
             <tr>
@@ -116,16 +118,16 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
         if (kind === 'career') {
           const label = careerLabel(String(x.career || ''));
           const diffVal = typeof x.diff === 'number' ? x.diff : 0; const diffClass = diffVal > 0 ? 'pos' : (diffVal < 0 ? 'neg' : '');
-          return `<tr><td>${careerIconEl(x.career)} <span>${label}</span></td><td class="num ${countClass}">${x.count}</td>${showDiff ? `<td class="num ${diffClass}">${signed(x.diff)}</td>` : ''}</tr>`;
+          return `<tr><td><span class="char-cell">${careerIconEl(x.career)} <span>${label}</span></span></td><td class="num ${countClass}">${x.count}</td>${showDiff ? `<td class="num ${diffClass}">${signed(x.diff)}</td>` : ''}</tr>`;
         } else if (kind === 'guild') {
           const label = String(x.name || 'Unknown Guild');
           const diffVal = typeof x.diff === 'number' ? x.diff : 0; const diffClass = diffVal > 0 ? 'pos' : (diffVal < 0 ? 'neg' : '');
-          return `<tr><td>${label}</td><td class="num ${countClass}">${x.count}</td>${showDiff ? `<td class="num ${diffClass}">${signed(x.diff)}</td>` : ''}</tr>`;
+          return `<tr><td><span class="char-cell"><span>${label}</span></span></td><td class="num ${countClass}">${x.count}</td>${showDiff ? `<td class="num ${diffClass}">${signed(x.diff)}</td>` : ''}</tr>`;
         } else {
           const label = String(x.name || 'Unknown');
           const diffVal = typeof x.diff === 'number' ? x.diff : 0; const diffClass = diffVal > 0 ? 'pos' : (diffVal < 0 ? 'neg' : '');
-          const clickable = x.id != null ? `<a href="#" class="open-score-sheet" data-char-id="${x.id}" data-char-name="${label}"${x.career ? ` data-career="${String(x.career)}"` : ''}>${label}</a>` : `<span>${label}</span>`;
-          return `<tr><td>${careerIconEl(x.career)} <span>${clickable}</span></td><td class="num ${countClass}">${x.count}</td>${showDiff ? `<td class="num ${diffClass}">${signed(x.diff)}</td>` : ''}</tr>`;
+          const clickable = x.id != null ? `<a href="#" class="open-score-sheet char-name" data-char-id="${x.id}" data-char-name="${label}"${x.career ? ` data-career="${String(x.career)}"` : ''}>${label}</a>` : `<span class="char-name">${label}</span>`;
+          return `<tr><td><span class="char-cell">${careerIconEl(x.career)} ${clickable}</span></td><td class="num ${countClass}">${x.count}</td>${showDiff ? `<td class="num ${diffClass}">${signed(x.diff)}</td>` : ''}</tr>`;
         }
       }).join('');
       return `
@@ -175,7 +177,18 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
     }
 
     setModalBody(header + grid);
-    updateCharSummary(row?.character?.career, level, rr);
+    // Initialize summary using baseCareer to keep icon visible even if not on leaderboard
+    updateCharSummary(baseCareer, level, rr);
+
+    // Independently fetch character info by ID to populate career/level/RR even if not on leaderboard
+    (async () => {
+      const info = await fetchCharacterInfo(charId, { signal: currentModalAbort?.signal } as any);
+      if (modalSessionId !== currentModalSessionId) return;
+      if (myGen !== __modalRenderGen) return;
+      if (info) {
+        updateCharSummary(info.career, info.level, info.renownRank);
+      }
+    })();
 
     (async () => {
       let lifeKills = 0, lifeDeaths = 0, lifeKd = 0;
@@ -194,7 +207,7 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
 
     const setTextClass = (id: string, text: string, isPos?: boolean|null) => { const el = document.getElementById(id); if (!el) return; el.textContent = text; el.classList.remove('pos','neg'); if (isPos != null) el.classList.add(isPos ? 'pos' : 'neg'); };
   const formatPeriodShort = (): string => { if (currentPeriod === 'weekly') return `Week ${weeklyWeek}`; const date = new Date(Date.UTC(monthlyYear, monthlyMonth - 1, 1)); const monthName = date.toLocaleString(undefined, { month: 'long' }); return `${monthName} ${monthlyYear}`; };
-    const setQualifyNote = (visible: boolean) => { const el = document.getElementById('qualifyNote') as HTMLElement | null; if (!el) return; if (visible) { el.textContent = `Not on leaderboard for ${formatPeriodShort()} — showing event totals.`; el.style.display = ''; } else { el.style.display = 'none'; } };
+  const setQualifyNote = (visible: boolean) => { const el = document.getElementById('qualifyNote') as HTMLElement | null; if (!el) return; if (visible) { el.textContent = `Not on leaderboard for ${formatPeriodShort()}`; el.style.display = ''; } else { el.style.display = 'none'; } };
     let periodSource: 'leaderboard' | 'events' | null = null;
 
     (async () => {
@@ -252,6 +265,7 @@ function setBusy(b: boolean) {
   if (periodNextBtn) periodNextBtn.disabled = b;
   if (status) status.textContent = b ? 'Loading…' : '';
   document.querySelectorAll<HTMLButtonElement>('.mode-btn').forEach((btn) => (btn.disabled = b));
+  if (showByNameBtn) showByNameBtn.disabled = b;
 }
 function showError(msg: string) { if (errorBox) { errorBox.style.display = 'block'; errorBox.textContent = msg; } }
 function clearError() { if (errorBox) { errorBox.style.display = 'none'; errorBox.textContent = ''; } }
@@ -542,6 +556,29 @@ document.querySelectorAll<HTMLElement>('.mode-btn').forEach((b) => b.classList.t
 currentBtn?.addEventListener('click', goToCurrent);
 periodPrevBtn?.addEventListener('click', () => { if (currentPeriod === 'weekly') adjustWeek(-1); else adjustMonth(-1); });
 periodNextBtn?.addEventListener('click', () => { if (currentPeriod === 'weekly') adjustWeek(1); else adjustMonth(1); });
+
+// Footer: open score sheet by typed name
+async function openByName() {
+  const nm = (nameInput?.value || '').trim();
+  if (!nm) return;
+  setBusy(true);
+  try {
+    const resolved = await resolveCharacterByName(nm);
+    if (!resolved) {
+      if (status) status.textContent = `No character found named "${nm}"`;
+      return;
+    }
+    await openScoreSheet(Number(resolved.id), resolved.name || nm);
+  } catch (e:any) {
+    if (status) status.textContent = String(e?.message || 'Failed to resolve character');
+  } finally {
+    setBusy(false);
+  }
+}
+showByNameBtn?.addEventListener('click', () => { openByName(); });
+nameInput?.addEventListener('keydown', (ev: KeyboardEvent) => {
+  if (ev.key === 'Enter') { ev.preventDefault(); openByName(); }
+});
 
 // Initial render
 updatePeriodTitle();
