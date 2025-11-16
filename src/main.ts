@@ -87,15 +87,15 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
         <table class="vlined summary-table">
           <tbody>
             <tr>
-              <th>Kills</th><th>Deaths</th><th>K/D</th><th>Lifetime Kills</th><th>Lifetime Deaths</th><th>Lifetime K/D</th>
+              <th>Kills</th><th>Deaths</th><th>K/D</th><th class="lifetime">Lifetime Kills</th><th class="lifetime">Lifetime Deaths</th><th class="lifetime">Lifetime K/D</th>
             </tr>
             <tr>
               <td class="num"><span id="periodKillsCell">…</span></td>
               <td class="num"><span id="periodDeathsCell">…</span></td>
               <td class="num"><span id="periodKdCell">…</span></td>
-              <td class="num"><span id="totalKillsCell">…</span></td>
-              <td class="num"><span id="totalDeathsCell">…</span></td>
-              <td class="num"><span id="totalKdCell">…</span></td>
+              <td class="num lifetime"><span id="totalKillsCell">…</span></td>
+              <td class="num lifetime"><span id="totalDeathsCell">…</span></td>
+              <td class="num lifetime"><span id="totalKdCell">…</span></td>
             </tr>
           </tbody>
         </table>
@@ -199,7 +199,18 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
       }
       if (modalSessionId !== currentModalSessionId) return; if (myGen !== __modalRenderGen) return;
       lifeKills = lifetime?.kills ?? 0; lifeDeaths = lifetime?.deaths ?? 0; lifeKd = lifetime?.kd ?? 0;
-      const setTextClass = (id: string, text: string, isPos?: boolean|null) => { const el = document.getElementById(id); if (!el) return; el.textContent = text; el.classList.remove('pos','neg'); if (isPos != null) el.classList.add(isPos ? 'pos' : 'neg'); };
+      const setTextClass = (id: string, text: string, isPos?: boolean|null) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = text;
+        el.classList.remove('pos','neg');
+        if (isPos != null) el.classList.add(isPos ? 'pos' : 'neg');
+        const td = el.closest('td');
+        if (td && td.classList.contains('lifetime')) {
+          td.classList.remove('pos','neg');
+          if (isPos != null) td.classList.add(isPos ? 'pos' : 'neg');
+        }
+      };
       setTextClass('totalKillsCell', String(lifeKills), true);
       setTextClass('totalDeathsCell', String(lifeDeaths), false);
       setTextClass('totalKdCell', (lifeKd as number).toFixed(2), (lifeKd as number) >= 1);
