@@ -20,6 +20,7 @@
         <colgroup>
           <col style="width:42px;" />
           <col />
+          <col />
           <col style="width:96px;" />
           <col style="width:96px;" />
           <col style="width:96px;" />
@@ -29,16 +30,29 @@
         </colgroup>
         <thead>
           <tr class="group-row">
-            <th colspan="5">
+            <th colspan="6">
               <div class="period-selector">
                 <button id="periodPrevBtn" class="nav-arrow" title="Previous">◀</button>
                 <div id="periodTitle" class="period-title">&nbsp;</div>
                 <button id="periodNextBtn" class="nav-arrow" title="Next">▶</button>
+                <button id="periodCurrentBtn" class="nav-arrow" title="Jump to current">⏭</button>
                 <div class="agg-control" id="aggControl">
                   <label for="aggSelect">Aggregate by</label>
                   <select id="aggSelect">
                     <option value="months">Months</option>
                     <option value="weeks">Weeks</option>
+                  </select>
+                </div>
+                <div class="board-control" id="boardControl">
+                  <select id="boardSelect" class="header-select">
+                    <option value="players">Players</option>
+                    <option value="guilds">Guilds</option>
+                  </select>
+                </div>
+                <div class="mode-control" id="modeControl">
+                  <select id="modeSelect" class="header-select">
+                    <option value="monthly">Monthly</option>
+                    <option value="weekly">Weekly</option>
                   </select>
                 </div>
               </div>
@@ -48,12 +62,13 @@
           <tr>
             <th class="rank">#</th>
             <th class="sortable" data-field="name">Character <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
-            <th class="num sortable" data-field="kills">Kills <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
-            <th class="num sortable" data-field="deaths">Deaths <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
-            <th class="num sortable" data-field="kd">K/D <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
+            <th class="sortable" data-field="guild">Guild <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
+            <th class="num sortable" data-field="kills" title="Tiebreakers: kills↓, deaths↑, name A–Z">Kills <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
+            <th class="num sortable" data-field="deaths" title="Tiebreakers: deaths↓, kills↑, name A–Z">Deaths <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
+            <th class="num sortable" data-field="kd" title="Tiebreakers: KDR↓, kills↓, name A–Z (0 deaths with kills = ∞)">KDR <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
             <th class="num lifetime sortable" data-field="allKills">Kills <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
             <th class="num lifetime sortable" data-field="allDeaths">Deaths <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
-            <th class="num lifetime sortable" data-field="allKd">K/D <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
+            <th class="num lifetime sortable" data-field="allKd">KDR <svg class="sort-arrow" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 2 L2 7 H8 Z"/></svg></th>
           </tr>
         </thead>
       </table>
@@ -62,6 +77,7 @@
         <table class="tbl body">
           <colgroup>
             <col style="width:42px;" />
+            <col />
             <col />
             <col style="width:96px;" />
             <col style="width:96px;" />
@@ -78,6 +94,7 @@
         <colgroup>
           <col style="width:42px;" />
           <col />
+          <col />
           <col style="width:96px;" />
           <col style="width:96px;" />
           <col style="width:96px;" />
@@ -87,21 +104,18 @@
         </colgroup>
         <tfoot>
           <tr>
-            <td colspan="5" class="period-footer" style="padding:.55rem .7rem;">
+            <td colspan="6" class="period-footer" style="padding:.55rem .7rem;">
               <div style="display:flex;gap:.5rem;justify-content:space-between;align-items:center;flex-wrap:wrap;">
                 <div class="footer-left" style="display:flex;align-items:center;gap:.5rem;">
                   <input id="nameInput" type="text" placeholder="Character name" style="padding:.35rem .55rem;border:1px solid #475569;border-radius:.4rem;background:#0b0e12;color:#e5e7eb;min-width:180px;" />
                   <button type="button" id="showByNameBtn" class="current-btn" title="Open score sheet for this name" style="padding:.45rem .9rem;">Show</button>
                 </div>
                 <div class="footer-right" style="display:flex;gap:.5rem;align-items:center;">
-                  <button type="button" class="mode-btn" data-mode="monthly">Month</button>
-                  <button type="button" class="mode-btn" data-mode="weekly">Week</button>
-                  <button type="button" id="currentBtn" class="current-btn" title="Jump to current period">Current</button>
+                  <span id="status" class="muted"></span>
                 </div>
               </div>
             </td>
             <td colspan="3" class="lifetime-footer" style="padding:.55rem .7rem;text-align:right;">
-              <span id="status" class="muted"></span>
             </td>
           </tr>
         </tfoot>

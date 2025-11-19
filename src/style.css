@@ -8,13 +8,43 @@ h1 { margin: 0 0 1rem; font-size: 1.6rem; }
 .period-center { display:none; }
 .period-title { font-size:1.1rem; font-weight:600; text-align:center; }
 .period-selector { display:flex; align-items:center; justify-content:center; gap:.6rem; position:relative; }
+.board-control { position:absolute; left:0; top:50%; transform: translateY(-50%); display:flex; align-items:center; gap:.35rem; }
+.mode-control { position:absolute; right:0; top:50%; transform: translateY(-50%); display:flex; align-items:center; gap:.35rem; }
+
+/* Unified header select appearance for board and mode */
+.period-selector .header-select {
+	padding: .35rem .55rem;
+	border: 1px solid #475569;
+	border-radius: .4rem;
+	background: #0b0e12;
+	color: #e5e7eb;
+	font-size: .9rem;
+}
 .group-row th { color:#f8f9fa; padding:.4rem .7rem; }
 .group-row th:not(.lifetime-group) { background:#181d22; }
 .group-row th.lifetime-group { background:#202b33; }
 .group-row .lifetime-title { font-size:.9rem; font-weight:600; text-align:center; opacity:.85; }
 .group-row .period-title { font-size:1rem; }
+.tbl.header .period-selector { min-height: 32px; --arrow-offset: 160px; --next-offset: var(--arrow-offset); --current-offset: 205px; }
+/* Center the period title and pin arrows regardless of text width */
+.tbl.header #periodTitle { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: max-content; }
+.tbl.header #periodPrevBtn { position: absolute; top: 50%; left: calc(50% - var(--arrow-offset)); transform: translate(-50%, -50%); }
+.tbl.header #periodNextBtn { position: absolute; top: 50%; left: calc(50% + var(--next-offset)); transform: translate(-50%, -50%); }
+.tbl.header #periodCurrentBtn { position: absolute; top: 50%; left: calc(50% + var(--current-offset)); transform: translate(-50%, -50%); }
 .nav-arrow { padding:.4rem .7rem; font-size:.9rem; border-radius:.5rem; border:1px solid #5558; background:#374151; color:#fff; cursor:pointer; }
-.nav-arrow:disabled { opacity:.5; cursor:default; }
+.nav-arrow:disabled,
+.nav-arrow[disabled],
+.nav-arrow[aria-disabled="true"] {
+	opacity: .5;
+	cursor: default !important;
+	pointer-events: none !important;
+}
+.nav-arrow:disabled:hover,
+.nav-arrow[disabled]:hover,
+.nav-arrow[aria-disabled="true"]:hover {
+	text-decoration: none;
+}
+.nav-arrow#periodCurrentBtn { font-weight:700; }
 .mode-btn { padding:.45rem .8rem; font-size:.9rem; border-radius:.5rem; border:1px solid #5558; background:#374151; color:#fff; cursor:pointer; }
 .mode-btn.active { background:#2563eb; }
 .footer-bar { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:.75rem; margin-top:1rem; }
@@ -66,9 +96,31 @@ td { color:#f8f9fa; }
 th.rank, td.rank { width: 42px; }
 /* Monospace font for row data for improved numeric alignment */
 tbody td { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Roboto Mono", "Courier New", monospace; }
+.tbl.body tbody td { white-space: nowrap; }
 .career-icon { width:20px; height:20px; object-fit:contain; vertical-align:middle; border-radius:4px; background:#1c1f24; }
 .char-cell { display:flex; align-items:center; gap:6px; width:100%; }
-.char-meta { font-size:.75rem; margin-left:auto; text-align:right; white-space:nowrap; color:#d1d5db; }
+	/* removed name-line wrapper; name and meta render inline */
+	.char-meta { font-size:.75rem; margin-left:.5rem; white-space: nowrap; color:#d1d5db; }
+.tbl.body tbody .char-name,
+.tbl.body tbody .guild-name { white-space: nowrap; }
+
+/* Numeric cells with left icon + right value, aligned to the cell's right */
+.tbl.body tbody td .cell-wrap,
+#charModal .summary-table td .cell-wrap { display:inline-flex; align-items:center; gap:6px; }
+.tbl.body tbody td .icon-slot,
+#charModal .summary-table td .icon-slot { flex: 0 0 20px; display:inline-flex; justify-content:flex-end; }
+.badge.kd, .badge.deaths { font-size: 18px; line-height: 20px; }
+.badge.deaths { color: #ef4444; }
+.ui-icon { width:20px; height:20px; display:inline-block; vertical-align:middle; }
+/* Deaths badge renders as a red cross; color forced via CSS */
+
+/* Text star glyphs */
+.star { display:inline-block; width:20px; height:20px; line-height:20px; text-align:center; font-size:18px; }
+.badge.kd { color:#22d3ee; }
+.star.kill.gold { color:#f8d14b; }
+.star.kill.silver { color:#c0c8d0; }
+.star.kill.bronze { color:#a86c3d; }
+
 .char-meta .num-val { color:#f8f9fa; font-weight:500; }
 .current-btn { padding:.45rem .9rem; font-size:.85rem; border:1px solid #5558; background:#374151; color:#fff; border-radius:.5rem; cursor:pointer; }
 .current-btn.active { background:#2563eb; }
@@ -104,6 +156,11 @@ th.rank, td.rank { text-align:left; width:42px; }
 /* Modal */
 .char-name { cursor:pointer; color:#60a5fa; text-decoration: none; }
 .char-name:hover { text-decoration: underline; }
+/* Guild links share same visual style; keep separate class for semantic hooks */
+.guild-name { cursor:pointer; color:#60a5fa; text-decoration: none; }
+.guild-name:hover { text-decoration: underline; }
+/* Ensure guild in modal header matches player name size/weight */
+#charModal .char-summary .guild-name { font-weight: 600; }
 
 /* Modal compact spacing to avoid scrollbars */
 #charModal [role="dialog"] { font-size: .95rem; }
@@ -155,3 +212,33 @@ th.rank, td.rank { text-align:left; width:42px; }
 /* Positive/negative emphasis for key stats */
 .pos { color: #22c55e; font-weight: 600; }
 .neg { color: #ef4444; font-weight: 600; }
+
+/* Tiny inline spinner for loading placeholders */
+.spinner { display:inline-block; width:14px; height:14px; border:2px solid #64748b; border-top-color: transparent; border-radius:50%; animation: spin .8s linear infinite; opacity:.8; vertical-align: -2px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Hide lifetime columns when viewing guilds board */
+:root[data-board="guilds"] .tbl.header thead .lifetime-group { display: none; }
+:root[data-board="guilds"] .tbl.header thead th.lifetime { display: none; }
+:root[data-board="guilds"] .tbl.body tbody td.lifetime { display: none; }
+:root[data-board="guilds"] .tbl.footer tfoot .lifetime-footer { display: none; }
+/* Also hide the lifetime colgroup columns to avoid reserving width (now cols 7-9) */
+:root[data-board="guilds"] .tbl.header colgroup col:nth-child(n+7),
+:root[data-board="guilds"] .tbl.body colgroup col:nth-child(n+7),
+:root[data-board="guilds"] .tbl.footer colgroup col:nth-child(n+7) { display: none; }
+
+/* Hide lifetime columns when viewing players board as well */
+:root[data-board="players"] .tbl.header thead .lifetime-group { display: none; }
+:root[data-board="players"] .tbl.header thead th.lifetime { display: none; }
+:root[data-board="players"] .tbl.body tbody td.lifetime { display: none; }
+:root[data-board="players"] .tbl.footer tfoot .lifetime-footer { display: none; }
+:root[data-board="players"] .tbl.header colgroup col:nth-child(n+7),
+:root[data-board="players"] .tbl.body colgroup col:nth-child(n+7),
+:root[data-board="players"] .tbl.footer colgroup col:nth-child(n+7) { display: none; }
+
+/* Hide the Guild column (3rd) when viewing guilds board */
+:root[data-board="guilds"] .tbl.header thead tr:nth-child(2) th:nth-child(3) { display: none; }
+:root[data-board="guilds"] .tbl.body tbody tr > td:nth-child(3) { display: none; }
+:root[data-board="guilds"] .tbl.header colgroup col:nth-child(3),
+:root[data-board="guilds"] .tbl.body colgroup col:nth-child(3),
+:root[data-board="guilds"] .tbl.footer colgroup col:nth-child(3) { display: none; }

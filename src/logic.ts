@@ -1,4 +1,4 @@
-export type Character = { id?: string | number; name?: string; career?: string; level?: number; renownRank?: number };
+export type Character = { id?: string | number; name?: string; career?: string; level?: number; renownRank?: number; realm?: string; guild?: { id?: string | number; name?: string; realm?: string } };
 export type Row = { rank: number; kills: number; deaths: number; character?: Character };
 export type LifetimeStats = { kills: number; deaths: number; kd: number };
 
@@ -7,10 +7,12 @@ export function careerLabel(s?: string) {
 }
 
 export function kdOf(row: { kills: number; deaths: number }) {
-  return row.deaths > 0 ? row.kills / row.deaths : row.kills;
+  if (row.deaths > 0) return row.kills / row.deaths;
+  if (row.kills > 0) return Number.POSITIVE_INFINITY;
+  return 0;
 }
 
-export type SortField = 'name' | 'kills' | 'deaths' | 'kd' | 'allKills' | 'allDeaths' | 'allKd';
+export type SortField = 'name' | 'guild' | 'kills' | 'deaths' | 'kd' | 'allKills' | 'allDeaths' | 'allKd';
 export type SortDir = 'asc' | 'desc';
 
 export function sortRows(baseRows: Row[], sortField: SortField, sortDir: SortDir, lifetimeGetter: (r: Row) => LifetimeStats) {
@@ -26,18 +28,73 @@ export function sortRows(baseRows: Row[], sortField: SortField, sortDir: SortDir
       if (killDiff !== 0) return killDiff;
       return a.deaths - b.deaths;
     }
+    if (sortField === 'guild') {
+      const getG = (r: Row) => {
+        const any: any = r.character || {};
+        const g = any.guildMembership?.guild || any.guild;
+        return (g?.name || '').toLowerCase();
+      };
+      const an = getG(a);
+      const bn = getG(b);
+      const ndir = sortDir === 'desc' ? 1 : -1;
+      if (an !== bn) return (an < bn ? -1 : 1) * ndir;
+      const killDiff = b.kills - a.kills;
+      if (killDiff !== 0) return killDiff;
+      return a.deaths - b.deaths;
+    }
     if (sortField === 'kills') {
       if (sortDir === 'desc') {
         if (b.kills !== a.kills) return b.kills - a.kills;
-        return a.deaths - b.deaths;
+        if (a.deaths !== b.deaths) return a.deaths - b.deaths;
+        const an = (a.character?.name || '').toLowerCase();
+        const bn = (b.character?.name || '').toLowerCase();
+        if (an !== bn) return an < bn ? -1 : 1;
+        return 0;
       } else {
         if (a.kills !== b.kills) return a.kills - b.kills;
-        return a.deaths - b.deaths;
+        if (a.deaths !== b.deaths) return a.deaths - b.deaths;
+        const an = (a.character?.name || '').toLowerCase();
+        const bn = (b.character?.name || '').toLowerCase();
+        if (an !== bn) return an < bn ? -1 : 1;
+        return 0;
       }
     }
     let av: number, bv: number;
-    if (sortField === 'deaths') { av = a.deaths; bv = b.deaths; }
-    else if (sortField === 'kd') { av = kdOf(a); bv = kdOf(b); }
+    if (sortField === 'deaths') {
+      if (sortDir === 'desc') {
+        if (b.deaths !== a.deaths) return b.deaths - a.deaths;
+        if (a.kills !== b.kills) return a.kills - b.kills; // lowest kills wins
+        const an = (a.character?.name || '').toLowerCase();
+        const bn = (b.character?.name || '').toLowerCase();
+        if (an !== bn) return an < bn ? -1 : 1;
+        return 0;
+      } else {
+        if (a.deaths !== b.deaths) return a.deaths - b.deaths;
+        if (a.kills !== b.kills) return b.kills - a.kills; // highest kills wins when sorting asc by deaths
+        const an = (a.character?.name || '').toLowerCase();
+        const bn = (b.character?.name || '').toLowerCase();
+        if (an !== bn) return an < bn ? -1 : 1;
+        return 0;
+      }
+    }
+    else if (sortField === 'kd') {
+      const ak = kdOf(a); const bk = kdOf(b);
+      if (sortDir === 'desc') {
+        if (bk !== ak) return bk - ak;
+        if (b.kills !== a.kills) return b.kills - a.kills; // highest kills wins
+        const an = (a.character?.name || '').toLowerCase();
+        const bn = (b.character?.name || '').toLowerCase();
+        if (an !== bn) return an < bn ? -1 : 1;
+        return 0;
+      } else {
+        if (ak !== bk) return ak - bk;
+        if (a.kills !== b.kills) return a.kills - b.kills; // lowest kills wins when ascending KDR
+        const an = (a.character?.name || '').toLowerCase();
+        const bn = (b.character?.name || '').toLowerCase();
+        if (an !== bn) return an < bn ? -1 : 1;
+        return 0;
+      }
+    }
     else if (sortField === 'allKills') { av = lifetimeGetter(a).kills; bv = lifetimeGetter(b).kills; }
     else if (sortField === 'allDeaths') { av = lifetimeGetter(a).deaths; bv = lifetimeGetter(b).deaths; }
     else if (sortField === 'allKd') { av = lifetimeGetter(a).kd; bv = lifetimeGetter(b).kd; }
@@ -46,7 +103,12 @@ export function sortRows(baseRows: Row[], sortField: SortField, sortDir: SortDir
     if (av === bv) {
       const killDiff = b.kills - a.kills;
       if (killDiff !== 0) return killDiff;
-      return a.deaths - b.deaths;
+      const deathDiff = a.deaths - b.deaths;
+      if (deathDiff !== 0) return deathDiff;
+      const an = (a.character?.name || '').toLowerCase();
+      const bn = (b.character?.name || '').toLowerCase();
+      if (an !== bn) return an < bn ? -1 : 1;
+      return 0;
     }
     return (av > bv ? 1 : -1) * dir;
   });

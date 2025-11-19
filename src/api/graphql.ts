@@ -30,6 +30,18 @@ export const WEEKLY_QUERY = `
       rank
       kills
       deaths
+      character { id name career level renownRank guildMembership { guild { id name realm } } }
+    }
+  }
+`;
+
+// Fallback without guildMembership for compatibility with older schemas
+export const WEEKLY_QUERY_NO_GUILD = `
+  query Weekly($year: Int!, $week: Int!){
+    weeklyKillLeaderboard(year: $year, week: $week){
+      rank
+      kills
+      deaths
       character { id name career level renownRank }
     }
   }
@@ -41,7 +53,42 @@ export const MONTHLY_QUERY = `
       rank
       kills
       deaths
+      character { id name career level renownRank guildMembership { guild { id name realm } } }
+    }
+  }
+`;
+
+// Fallback without guildMembership for compatibility with older schemas
+export const MONTHLY_QUERY_NO_GUILD = `
+  query Monthly($year: Int!, $month: Int!){
+    monthlyKillLeaderboard(year: $year, month: $month){
+      rank
+      kills
+      deaths
       character { id name career level renownRank }
+    }
+  }
+`;
+
+// Guild leaderboards
+export const WEEKLY_GUILD_QUERY = `
+  query WeeklyGuild($year: Int!, $week: Int!){
+    weeklyGuildKillLeaderboard(year: $year, week: $week){
+      rank
+      kills
+      deaths
+      guild { id name realm }
+    }
+  }
+`;
+
+export const MONTHLY_GUILD_QUERY = `
+  query MonthlyGuild($year: Int!, $month: Int!){
+    monthlyGuildKillLeaderboard(year: $year, month: $month){
+      rank
+      kills
+      deaths
+      guild { id name realm }
     }
   }
 `;
@@ -50,7 +97,7 @@ export const MONTHLY_QUERY = `
 export async function fetchCharacterInfo(
   id: number | string,
   options?: { signal?: AbortSignal }
-): Promise<{ id: string | number; name?: string; career?: string; level?: number; renownRank?: number; guild?: { id?: string | number; name?: string } } | null> {
+): Promise<{ id: string | number; name?: string; career?: string; level?: number; renownRank?: number; guild?: { id?: string | number; name?: string; realm?: string } } | null> {
   const queryWithGuild = `
     query CharacterInfo($id: ID!) {
       character(id: $id) {
@@ -59,7 +106,7 @@ export async function fetchCharacterInfo(
         career
         level
         renownRank
-        guildMembership { guild { id name } }
+        guildMembership { guild { id name realm } }
       }
     }
   `;
@@ -81,7 +128,7 @@ export async function fetchCharacterInfo(
     if (!c) return null;
   const gm = c.guildMembership;
   const g = gm?.guild;
-  return { id: c.id, name: c.name, career: c.career, level: c.level, renownRank: c.renownRank, guild: g ? { id: g.id, name: g.name } : undefined };
+  return { id: c.id, name: c.name, career: c.career, level: c.level, renownRank: c.renownRank, guild: g ? { id: g.id, name: g.name, realm: g.realm } : undefined };
   } catch {
     try {
       const data = await gql<any>(queryNoGuild, { id: String(id) }, { signal: options?.signal });
@@ -143,6 +190,54 @@ export async function resolveCharacterByName(name: string, options?: { signal?: 
   return null;
 }
 
+// Try to resolve a guild by exact name. Attempts multiple likely schema shapes to be robust.
+export async function resolveGuildByName(name: string, options?: { signal?: AbortSignal }): Promise<{ id: string | number; name: string; realm?: string } | null> {
+  const nm = String(name).trim();
+  if (!nm) return null;
+  // Attempt 1: guilds connection with where filter
+  const tryGuildsWhere = async () => {
+    const q = `
+      query FindGuildByName($name: String!) {
+        guilds(first: 1, where: { name: { eq: $name } }) {
+          nodes { id name realm }
+        }
+      }
+    `;
+    const data = await gql<any>(q, { name: nm }, { signal: options?.signal });
+    const node = data?.guilds?.nodes?.[0];
+    if (node?.id) return { id: node.id, name: node.name || nm, realm: node.realm };
+    return null;
+  };
+  // Attempt 2: guildByName field
+  const tryGuildByName = async () => {
+    const q = `
+      query FindGuildByName2($name: String!) {
+        guildByName(name: $name) { id name realm }
+      }
+    `;
+    const data = await gql<any>(q, { name: nm }, { signal: options?.signal });
+    const node = data?.guildByName;
+    if (node?.id) return { id: node.id, name: node.name || nm, realm: node.realm };
+    return null;
+  };
+  // Attempt 3: guilds connection using query arg
+  const tryGuildsQuery = async () => {
+    const q = `
+      query FindGuildByName3($name: String!) {
+        guilds(first: 1, query: $name) { nodes { id name realm } }
+      }
+    `;
+    const data = await gql<any>(q, { name: nm }, { signal: options?.signal });
+    const node = data?.guilds?.nodes?.[0];
+    if (node?.id) return { id: node.id, name: node.name || nm, realm: node.realm };
+    return null;
+  };
+  try { const r = await tryGuildsWhere(); if (r) return r; } catch {}
+  try { const r = await tryGuildByName(); if (r) return r; } catch {}
+  try { const r = await tryGuildsQuery(); if (r) return r; } catch {}
+  return null;
+}
+
 // Fetch lifetime totals for a single character id
 export async function fetchLifetimeTotalsFor(id: number | string, options?: { signal?: AbortSignal }): Promise<{ kills: number; deaths: number; kd: number; scenarioWins: number; scenarioLosses: number }> {
   const query = `
@@ -163,7 +258,7 @@ export async function fetchLifetimeTotalsFor(id: number | string, options?: { si
 
 // Aggregation types
 export type Opponent = { id: string | number; name: string; career?: string; count: number; diff?: number };
-export type TopGuild = { id: string | number; name: string; count: number; diff?: number };
+export type TopGuild = { id: string | number; name: string; count: number; diff?: number; realm?: string };
 export type TopCareer = { career: string; count: number; diff?: number };
 
 export async function fetchTopOpponents(
@@ -201,12 +296,12 @@ export async function fetchTopOpponents(
         killsRecent: kills(first: $first, after: $afterK, where: { time: { gte: $from, lte: $to }, killerCharacterId: { eq: $id } }) {
           totalCount
           pageInfo { hasNextPage endCursor }
-          nodes { id instance { id } victim { character { id name career } guild { id name } } }
+          nodes { id instance { id } victim { character { id name career } guild { id name realm } } }
         }
         deathsRecent: kills(first: $first, after: $afterD, where: { time: { gte: $from, lte: $to }, victimCharacterId: { eq: $id } }) {
           totalCount
           pageInfo { hasNextPage endCursor }
-          nodes { id instance { id } deathblow { id name career } attackers { character { id } guild { id name } } }
+          nodes { id instance { id } deathblow { id name career } attackers { character { id } guild { id name realm } } }
         }
       }
     `;
@@ -239,18 +334,22 @@ export async function fetchTopOpponents(
       for (const d of deathsRecent) { const kb = d?.deathblow; if (!kb) continue; const key = kb.id; deathsFrom.set(key, (deathsFrom.get(key) || 0) + 1); }
 
       // Guild-level maps
-      const victimGuildCounts = new Map<string | number, { id: string|number; name: string; count: number }>();
+      const victimGuildCounts = new Map<string | number, { id: string|number; name: string; count: number; realm?: string }>();
       for (const k of killsRecent) {
         const g = k?.victim?.guild; if (!g) continue; const key = g.id;
-        const prev = victimGuildCounts.get(key) || { id: key, name: g.name || 'Unknown Guild', count: 0 };
+        const prev = victimGuildCounts.get(key) || { id: key, name: g.name || 'Unknown Guild', realm: g.realm, count: 0 };
+        prev.name = g.name || prev.name;
+        prev.realm = g.realm || prev.realm;
         prev.count++; victimGuildCounts.set(key, prev);
       }
-      const killerGuildCounts = new Map<string | number, { id: string|number; name: string; count: number }>();
+      const killerGuildCounts = new Map<string | number, { id: string|number; name: string; count: number; realm?: string }>();
       for (const d of deathsRecent) {
         const kb = d?.deathblow; if (!kb) continue; const attackers: any[] = d?.attackers || [];
         const a = attackers.find(at => String(at?.character?.id) === String(kb.id));
         const g = a?.guild; if (!g) continue; const key = g.id;
-        const prev = killerGuildCounts.get(key) || { id: key, name: g.name || 'Unknown Guild', count: 0 };
+        const prev = killerGuildCounts.get(key) || { id: key, name: g.name || 'Unknown Guild', realm: g.realm, count: 0 };
+        prev.name = g.name || prev.name;
+        prev.realm = g.realm || prev.realm;
         prev.count++; killerGuildCounts.set(key, prev);
       }
 
@@ -282,13 +381,13 @@ export async function fetchTopOpponents(
       const guildsKilled = (() => {
         return Array.from(victimGuildCounts.values()).map(v => {
           const other = killerGuildCounts.get(v.id)?.count || 0;
-          return { id: v.id, name: v.name, count: v.count, diff: v.count - other } as TopGuild;
+          return { id: v.id, name: v.name, count: v.count, diff: v.count - other, realm: v.realm } as TopGuild;
         }).sort((a,b)=>b.count-a.count).slice(0,maxList);
       })();
       const killersGuilds = (() => {
         return Array.from(killerGuildCounts.values()).map(v => {
           const other = victimGuildCounts.get(v.id)?.count || 0;
-          return { id: v.id, name: v.name, count: v.count, diff: other - v.count } as TopGuild;
+          return { id: v.id, name: v.name, count: v.count, diff: other - v.count, realm: v.realm } as TopGuild;
         }).sort((a,b)=>b.count-a.count).slice(0,maxList);
       })();
       const careersKilled = (() => {
@@ -587,6 +686,164 @@ export async function fetchTopOpponents(
     periodStats: { kills: periodKillsTotal, deaths: periodDeathsTotal, kd: periodDeathsTotal>0 ? periodKillsTotal/periodDeathsTotal : periodKillsTotal },
     scanned: { killsNodes, deathsNodes, killsTotal: periodKillsTotal, deathsTotal: periodDeathsTotal, hitCap, scenarioPages: scenarioPagesCounter }
   };
+}
+
+// Guild-focused version of top opponents within a time window
+export async function fetchTopOpponentsForGuild(
+  id: number | string,
+  opts: {
+    fromIso?: string; toIso?: string; limit?: number; fullScan?: boolean;
+    onProgress?: (p: {
+      victims: Opponent[]; killers: Opponent[];
+      guildsKilled: TopGuild[]; careersKilled: TopCareer[];
+      killersGuilds: TopGuild[]; killersCareers: TopCareer[];
+      memberKillers: Opponent[]; memberDeaths: Opponent[];
+      periodStats: { kills: number; deaths: number; kd: number };
+      scanned?: { killsNodes: number; killsTotal: number; deathsNodes: number; deathsTotal: number; hitCap?: boolean };
+    }) => void;
+    signal?: AbortSignal;
+  } = {}
+): Promise<{
+  victims: Opponent[]; killers: Opponent[];
+  guildsKilled: TopGuild[]; careersKilled: TopCareer[];
+  killersGuilds: TopGuild[]; killersCareers: TopCareer[];
+  memberKillers: Opponent[]; memberDeaths: Opponent[];
+  periodStats: { kills: number; deaths: number; kd: number };
+  scanned?: { killsNodes: number; killsTotal: number; deathsNodes: number; deathsTotal: number; hitCap?: boolean };
+}> {
+  const maxList = opts.limit ?? 10;
+  const toSeconds = (iso?: string) => (iso ? Math.floor(new Date(iso).getTime() / 1000) : undefined);
+  const fromSec = toSeconds(opts.fromIso);
+  const toSec = toSeconds(opts.toIso);
+
+  type KDPage = { killsRecent: { nodes: any[]; pageInfo: { hasNextPage: boolean; endCursor?: string }; totalCount: number }; deathsRecent: { nodes: any[]; pageInfo: { hasNextPage: boolean; endCursor?: string }; totalCount: number } };
+  async function fetchKDPage(first: number, afterK?: string, afterD?: string): Promise<KDPage> {
+    const query = `
+      query KD($id: UnsignedInt!, $from: Int!, $to: Int!, $first: Int!, $afterK: String, $afterD: String) {
+        killsRecent: kills(first: $first, after: $afterK, where: { time: { gte: $from, lte: $to }, killerGuildId: { eq: $id } }) {
+          totalCount
+          pageInfo { hasNextPage endCursor }
+          nodes { id instance { id } deathblow { id name career } attackers { character { id } guild { id name realm } } victim { character { id name career } guild { id name realm } } }
+        }
+        deathsRecent: kills(first: $first, after: $afterD, where: { time: { gte: $from, lte: $to }, victimGuildId: { eq: $id } }) {
+          totalCount
+          pageInfo { hasNextPage endCursor }
+          nodes { id instance { id } deathblow { id name career } victim { character { id name career } } attackers { character { id } guild { id name realm } } }
+        }
+      }
+    `;
+    const data = await gql<any>(query, { id: Number(id), from: Math.floor(fromSec ?? 0), to: Math.floor(toSec ?? Date.now()/1000), first, afterK, afterD }, { signal: opts.signal });
+    return {
+      killsRecent: { nodes: data?.killsRecent?.nodes || [], pageInfo: data?.killsRecent?.pageInfo || { hasNextPage: false }, totalCount: data?.killsRecent?.totalCount ?? 0 },
+      deathsRecent: { nodes: data?.deathsRecent?.nodes || [], pageInfo: data?.deathsRecent?.pageInfo || { hasNextPage: false }, totalCount: data?.deathsRecent?.totalCount ?? 0 }
+    };
+  }
+
+  const pageCandidates = [100, 50, 25, 10];
+  let pageSize = 100;
+  let killsRecent: any[] = [], deathsRecent: any[] = [];
+  const seenKillIds = new Set<string>();
+  const seenDeathIds = new Set<string>();
+  let periodKillsTotal = 0, periodDeathsTotal = 0;
+  let afterK: string | undefined, afterD: string | undefined;
+
+  // pick a working page size
+  let firstOk=false, firstErr:any=null;
+  for (const f of pageCandidates) {
+    try {
+      const p1 = await fetchKDPage(f);
+      for (const n of p1.killsRecent.nodes){ const kid=String(n?.id ?? `${n?.time}|${n?.victim?.character?.id}|${n?.instance?.id}`); if(!seenKillIds.has(kid)){ seenKillIds.add(kid); killsRecent.push(n);} }
+      for (const n of p1.deathsRecent.nodes){ const did=String(n?.id ?? `${n?.time}|${n?.deathblow?.id}|${n?.instance?.id}`); if(!seenDeathIds.has(did)){ seenDeathIds.add(did); deathsRecent.push(n);} }
+      afterK = p1.killsRecent.pageInfo.endCursor;
+      afterD = p1.deathsRecent.pageInfo.endCursor;
+      pageSize = f; firstOk=true;
+      periodKillsTotal = p1.killsRecent.totalCount ?? killsRecent.length;
+      periodDeathsTotal = p1.deathsRecent.totalCount ?? deathsRecent.length;
+      break;
+    } catch(e:any){ const msg=String(e?.message||e).toLowerCase(); if(msg.includes('maximum allowed items per page')||msg.includes('first')||msg.includes('page')){ firstErr=e; continue; } throw e; }
+  }
+  if(!firstOk && firstErr) throw firstErr;
+
+  let hasNextK=!!afterK, hasNextD=!!afterD;
+  while((hasNextK && killsRecent.length < periodKillsTotal) || (hasNextD && deathsRecent.length < periodDeathsTotal)){
+    const p = await fetchKDPage(pageSize, afterK, afterD);
+    if(p.killsRecent.nodes.length){ for (const n of p.killsRecent.nodes){ const kid=String(n?.id ?? `${n?.time}|${n?.victim?.character?.id}|${n?.instance?.id}`); if(!seenKillIds.has(kid)){ seenKillIds.add(kid); killsRecent.push(n);} } }
+    if(p.deathsRecent.nodes.length){ for (const n of p.deathsRecent.nodes){ const did=String(n?.id ?? `${n?.time}|${n?.deathblow?.id}|${n?.instance?.id}`); if(!seenDeathIds.has(did)){ seenDeathIds.add(did); deathsRecent.push(n);} } }
+    afterK = p.killsRecent.pageInfo.endCursor; afterD = p.deathsRecent.pageInfo.endCursor; hasNextK = !!p.killsRecent.pageInfo.hasNextPage; hasNextD = !!p.deathsRecent.pageInfo.hasNextPage;
+    // Progressive emission
+    try {
+      if (opts.onProgress) {
+        const partial = buildAggregates(killsRecent, deathsRecent);
+        opts.onProgress({ ...partial, scanned: { killsNodes: killsRecent.length, killsTotal: periodKillsTotal, deathsNodes: deathsRecent.length, deathsTotal: periodDeathsTotal, hitCap: !(hasNextK||hasNextD) } });
+      }
+    } catch {}
+  }
+
+  function buildAggregates(killsArr: any[], deathsArr: any[]) {
+    const killsAgainst = new Map<string | number, number>();
+    for (const k of killsArr) { const vc = k?.victim?.character; if (!vc) continue; const key = vc.id; killsAgainst.set(key, (killsAgainst.get(key) || 0) + 1); }
+    const deathsFrom = new Map<string | number, number>();
+    for (const d of deathsArr) { const kb = d?.deathblow; if (!kb) continue; const key = kb.id; deathsFrom.set(key, (deathsFrom.get(key) || 0) + 1); }
+    // Member tallies (by deathblow for kills, by victim for deaths)
+    const memberKillCounts = new Map<string | number, { id: string|number; name: string; career?: string; count: number }>();
+    const guildIdStr = String(id);
+    for (const k of killsArr) {
+      const db = k?.deathblow; if (!db) continue;
+      const attackers: any[] = k?.attackers || [];
+      const a = attackers.find((at: any) => String(at?.character?.id) === String(db.id));
+      const gid = a?.guild?.id;
+      if (String(gid) !== guildIdStr) continue; // ensure only this guild's members
+      const key = db.id;
+      const prev = memberKillCounts.get(key) || { id: key, name: db.name || 'Unknown', career: db.career, count: 0 };
+      prev.name = db.name || prev.name; prev.career = db.career || prev.career; prev.count++;
+      memberKillCounts.set(key, prev);
+    }
+    const memberDeathCounts = new Map<string | number, { id: string|number; name: string; career?: string; count: number }>();
+    for (const d of deathsArr) { const vc = d?.victim?.character; if (!vc) continue; const key = vc.id; const prev = memberDeathCounts.get(key) || { id: key, name: vc.name || 'Unknown', career: vc.career, count: 0 }; prev.name = vc.name || prev.name; prev.career = vc.career || prev.career; prev.count++; memberDeathCounts.set(key, prev); }
+    const victimGuildCounts = new Map<string | number, { id: string|number; name: string; count: number; realm?: string }>();
+    for (const k of killsArr) { const g = k?.victim?.guild; if (!g) continue; const key = g.id; const prev = victimGuildCounts.get(key) || { id: key, name: g.name || 'Unknown Guild', realm: g.realm, count: 0 }; prev.name=g.name||prev.name; prev.realm=g.realm||prev.realm; prev.count++; victimGuildCounts.set(key, prev); }
+    const killerGuildCounts = new Map<string | number, { id: string|number; name: string; count: number; realm?: string }>();
+    for (const d of deathsArr) { const kb = d?.deathblow; if (!kb) continue; const attackers: any[] = d?.attackers || []; const a = attackers.find(at => String(at?.character?.id) === String(kb.id)); const g = a?.guild; if (!g) continue; const key = g.id; const prev = killerGuildCounts.get(key) || { id: key, name: g.name || 'Unknown Guild', realm: g.realm, count: 0 }; prev.name=g.name||prev.name; prev.realm=g.realm||prev.realm; prev.count++; killerGuildCounts.set(key, prev); }
+    const victimCareerCounts = new Map<string, { career: string; count: number }>();
+    for (const k of killsArr) { const c = k?.victim?.character?.career as string|undefined; if (!c) continue; const prev = victimCareerCounts.get(c) || { career: c, count: 0 }; prev.count++; victimCareerCounts.set(c, prev); }
+    const killerCareerCounts = new Map<string, { career: string; count: number }>();
+    for (const d of deathsArr) { const c = d?.deathblow?.career as string|undefined; if (!c) continue; const prev = killerCareerCounts.get(c) || { career: c, count: 0 }; prev.count++; killerCareerCounts.set(c, prev); }
+    const victims: Opponent[] = Array.from(killsAgainst.entries()).map(([key,cnt]) => {
+      const anyKill = killsArr.find(x => String(x?.victim?.character?.id) === String(key));
+      const name = anyKill?.victim?.character?.name || 'Unknown';
+      const career = anyKill?.victim?.character?.career;
+      const diff = cnt - (deathsFrom.get(key) || 0);
+      return { id: key, name, career, count: cnt, diff } as Opponent;
+    }).sort((a,b)=> b.count - a.count).slice(0, maxList);
+    const killers: Opponent[] = Array.from(deathsFrom.entries()).map(([key,cnt]) => {
+      const anyDeath = deathsArr.find(x => String(x?.deathblow?.id) === String(key));
+      const name = anyDeath?.deathblow?.name || 'Unknown';
+      const career = anyDeath?.deathblow?.career;
+      const diff = (killsAgainst.get(key) || 0) - cnt;
+      return { id: key, name, career, count: cnt, diff } as Opponent;
+    }).sort((a,b)=> b.count - a.count).slice(0, maxList);
+    const guildsKilled: TopGuild[] = Array.from(victimGuildCounts.values()).map(v => {
+      const other = killerGuildCounts.get(v.id)?.count || 0;
+      return { id: v.id, name: v.name, count: v.count, diff: v.count - other, realm: v.realm };
+    }).sort((a,b)=>b.count-a.count).slice(0,maxList);
+    const killersGuilds: TopGuild[] = Array.from(killerGuildCounts.values()).map(v => {
+      const other = victimGuildCounts.get(v.id)?.count || 0;
+      return { id: v.id, name: v.name, count: v.count, diff: other - v.count, realm: v.realm };
+    }).sort((a,b)=>b.count-a.count).slice(0,maxList);
+    const careersKilled: TopCareer[] = Array.from(victimCareerCounts.values()).map(v => {
+      const other = killerCareerCounts.get(v.career)?.count || 0;
+      return { career: v.career, count: v.count, diff: v.count - other };
+    }).sort((a,b)=>b.count-a.count).slice(0,maxList);
+    const killersCareers: TopCareer[] = Array.from(killerCareerCounts.values()).map(v => {
+      const other = victimCareerCounts.get(v.career)?.count || 0;
+      return { career: v.career, count: v.count, diff: other - v.count };
+    }).sort((a,b)=>b.count-a.count).slice(0,maxList);
+    const memberKillers: Opponent[] = Array.from(memberKillCounts.values()).map(v => ({ id: v.id, name: v.name, career: v.career, count: v.count } as Opponent)).sort((a,b)=>b.count-a.count).slice(0, maxList);
+    const memberDeaths: Opponent[] = Array.from(memberDeathCounts.values()).map(v => ({ id: v.id, name: v.name, career: v.career, count: v.count } as Opponent)).sort((a,b)=>b.count-a.count).slice(0, maxList);
+    return { victims, killers, guildsKilled, careersKilled, killersGuilds, killersCareers, memberKillers, memberDeaths, periodStats: { kills: periodKillsTotal, deaths: periodDeathsTotal, kd: periodDeathsTotal>0 ? periodKillsTotal/periodDeathsTotal : periodKillsTotal } };
+  }
+  const finalAgg = buildAggregates(killsRecent, deathsRecent);
+  return { ...finalAgg, scanned: { killsNodes: killsRecent.length, killsTotal: periodKillsTotal, deathsNodes: deathsRecent.length, deathsTotal: periodDeathsTotal } };
 }
 
 // Lightweight totals-only fetch for a character within a [from,to] seconds window.
