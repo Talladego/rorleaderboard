@@ -216,6 +216,10 @@ th.rank, td.rank { text-align:left; width:42px; }
 #charModal .char-line1 { display:flex; align-items:center; gap:.5rem; }
 #charModal .char-line2 { font-size:.9rem; }
 
+/* Gear link next to name in score sheet */
+.gear-link { color:#9ca3af; text-decoration:none; font-size:1rem; display:inline-flex; align-items:center; line-height:1; }
+.gear-link:hover { color:#d1d5db; }
+
 /* Positive/negative emphasis for key stats */
 .pos { color: #22c55e; font-weight: 600; }
 .neg { color: #ef4444; font-weight: 600; }

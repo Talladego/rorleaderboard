@@ -84,8 +84,9 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
       ? `<a href="#" class="open-guild-sheet guild-name char-name" data-guild-id="${guildIdForHeader}" data-guild-name="${gname}"${guildRealmForHeader ? ` data-guild-realm="${guildRealmForHeader}"` : ''}>${gname}</a>`
       : (gname ? `<span class="guild-name char-name">${gname}</span>` : '');
     const nameWithGuild = gname ? `<strong>${name}</strong> (${realmIcon}${clickableGuild})` : `<strong>${name}</strong>`;
+    const gearHref = `https://rorplanner.pages.dev/?loadCharacterA=${encodeURIComponent(String(name||''))}`;
     el.innerHTML = `
-      <div class="char-line1">${icon} ${nameWithGuild} <span id="charBadgesSlot" style="display:inline-flex;gap:8px;vertical-align:middle;margin-left:.4rem;">${existingBadges}</span></div>
+      <div class="char-line1">${icon} ${nameWithGuild} <a class="gear-link" href="${gearHref}" target="_blank" rel="noopener noreferrer" title="Open gear loadout in RoR Planner" aria-label="Open gear loadout in RoR Planner">⚙</a> <span id="charBadgesSlot" style="display:inline-flex;gap:8px;vertical-align:middle;margin-left:.4rem;">${existingBadges}</span></div>
       <div class="char-line2 muted">Level ${level ?? '—'}, RR ${rr ?? '—'}</div>
     `;
   }
