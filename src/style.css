@@ -31,6 +31,13 @@ h1 { margin: 0 0 1rem; font-size: 1.6rem; }
 .tbl.header #periodPrevBtn { position: absolute; top: 50%; left: calc(50% - var(--arrow-offset)); transform: translate(-50%, -50%); }
 .tbl.header #periodNextBtn { position: absolute; top: 50%; left: calc(50% + var(--next-offset)); transform: translate(-50%, -50%); }
 .tbl.header #periodCurrentBtn { position: absolute; top: 50%; left: calc(50% + var(--current-offset)); transform: translate(-50%, -50%); }
+
+/* Mirror the same selector layout inside the modal title */
+#charModal .period-selector { min-height: 32px; --arrow-offset: 160px; --next-offset: var(--arrow-offset); --current-offset: 205px; position: relative; }
+#charModal #modalPeriodTitle_m { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: max-content; }
+#charModal #periodPrevBtn_m { position: absolute; top: 50%; left: calc(50% - var(--arrow-offset)); transform: translate(-50%, -50%); }
+#charModal #periodNextBtn_m { position: absolute; top: 50%; left: calc(50% + var(--next-offset)); transform: translate(-50%, -50%); }
+#charModal #periodCurrentBtn_m { position: absolute; top: 50%; left: calc(50% + var(--current-offset)); transform: translate(-50%, -50%); }
 .nav-arrow { padding:.4rem .7rem; font-size:.9rem; border-radius:.5rem; border:1px solid #5558; background:#374151; color:#fff; cursor:pointer; }
 .nav-arrow:disabled,
 .nav-arrow[disabled],
@@ -166,7 +173,7 @@ th.rank, td.rank { text-align:left; width:42px; }
 #charModal [role="dialog"] { font-size: .95rem; }
 #charModal .modal-frame { width: 1200px; max-width: 98vw; max-height: 98vh; top: 10vh !important; height: auto; transform: translateX(-50%) !important; }
 #charModal #charModalBody { padding: .6rem !important; }
-#charModal [role="dialog"] > div:nth-child(1) { padding: .5rem .6rem !important; }
+#charModal [role="dialog"] > div:nth-child(1) { padding: .5rem .6rem !important; background:#181d22; border-bottom:1px solid #2b3542; }
 #charModal table { border-radius: .35rem; }
 #charModal th, #charModal td { padding: .35rem .5rem; }
 #charModal thead tr:first-child th { padding: .3rem .45rem; }

@@ -228,10 +228,11 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
   const sheetKindLabel = (currentPeriod === 'weekly') ? 'Weekly Score Sheet' : 'Monthly Score Sheet';
       modalTitleEl.innerHTML = `
         <div id="sheetLabel_m" class="sheet-label" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:.9rem;opacity:.9;">${sheetKindLabel}</div>
-        <div class="period-selector" id="modalPeriodSelector" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
+        <div class="period-selector" id="modalPeriodSelector" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-height:32px;">
           <button id="periodPrevBtn_m" class="nav-arrow" title="Previous">◀</button>
           <div id="modalPeriodTitle_m" class="period-title">${periodText}</div>
           <button id="periodNextBtn_m" class="nav-arrow" title="Next">▶</button>
+          <button id="periodCurrentBtn_m" class="nav-arrow" title="Jump to current">⏭</button>
         </div>
       `;
   const titleWrap = (modalTitleEl as HTMLElement);
@@ -239,10 +240,13 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
   titleWrap.style.alignItems = 'center'; titleWrap.style.justifyContent = 'center';
   const headerWrap = titleWrap.parentElement as HTMLElement | null;
   if (headerWrap) headerWrap.style.position = 'relative';
-      const prevM = document.getElementById('periodPrevBtn_m');
-      const nextM = document.getElementById('periodNextBtn_m');
+      const prevM = document.getElementById('periodPrevBtn_m') as HTMLButtonElement | null;
+      const nextM = document.getElementById('periodNextBtn_m') as HTMLButtonElement | null;
+      const currM = document.getElementById('periodCurrentBtn_m') as HTMLButtonElement | null;
   prevM?.addEventListener('click', async () => { if (currentPeriod === 'weekly') adjustWeek(-1); else adjustMonth(-1); try { await renderModal(true); } catch {} });
   nextM?.addEventListener('click', async () => { if (currentPeriod === 'weekly') adjustWeek(1); else adjustMonth(1); try { await renderModal(true); } catch {} });
+  currM?.addEventListener('click', async () => { if (isAtCurrentPeriod()) return; goToCurrent(); try { await renderModal(true); } catch {} });
+  const isCur = isAtCurrentPeriod(); if (nextM) nextM.disabled = isCur; if (currM) currM.disabled = isCur;
     }
 
     setModalBody(header + grid);
@@ -538,10 +542,11 @@ async function openGuildScoreSheet(guildId: number, name: string, realmHint?: st
       const sheetKindLabel = (currentPeriod === 'weekly') ? 'Weekly Guild Score Sheet' : 'Monthly Guild Score Sheet';
       modalTitleEl.innerHTML = `
         <div id="sheetLabel_m" class="sheet-label" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:.9rem;opacity:.9;">${sheetKindLabel}</div>
-        <div class="period-selector" id="modalPeriodSelector" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
+        <div class="period-selector" id="modalPeriodSelector" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);min-height:32px;">
           <button id="periodPrevBtn_m" class="nav-arrow" title="Previous">◀</button>
           <div id="modalPeriodTitle_m" class="period-title">${periodText}</div>
           <button id="periodNextBtn_m" class="nav-arrow" title="Next">▶</button>
+          <button id="periodCurrentBtn_m" class="nav-arrow" title="Jump to current">⏭</button>
         </div>
       `;
       const titleWrap = (modalTitleEl as HTMLElement);
@@ -549,10 +554,13 @@ async function openGuildScoreSheet(guildId: number, name: string, realmHint?: st
       titleWrap.style.alignItems = 'center'; titleWrap.style.justifyContent = 'center';
       const headerWrap = titleWrap.parentElement as HTMLElement | null;
       if (headerWrap) headerWrap.style.position = 'relative';
-      const prevM = document.getElementById('periodPrevBtn_m');
-      const nextM = document.getElementById('periodNextBtn_m');
+      const prevM = document.getElementById('periodPrevBtn_m') as HTMLButtonElement | null;
+      const nextM = document.getElementById('periodNextBtn_m') as HTMLButtonElement | null;
+      const currM = document.getElementById('periodCurrentBtn_m') as HTMLButtonElement | null;
       prevM?.addEventListener('click', async () => { if (currentPeriod === 'weekly') adjustWeek(-1); else adjustMonth(-1); try { await renderModal(); } catch {} });
       nextM?.addEventListener('click', async () => { if (currentPeriod === 'weekly') adjustWeek(1); else adjustMonth(1); try { await renderModal(); } catch {} });
+      currM?.addEventListener('click', async () => { if (isAtCurrentPeriod()) return; goToCurrent(); try { await renderModal(); } catch {} });
+      const isCur = isAtCurrentPeriod(); if (nextM) nextM.disabled = isCur; if (currM) currM.disabled = isCur;
     }
 
     // Local helpers for guild lists and layout
