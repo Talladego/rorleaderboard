@@ -4,6 +4,36 @@ function secToIso(sec: number): string {
   return new Date(sec * 1000).toISOString();
 }
 
+type DeathParty = { id?: string | number; name?: string; career?: string };
+
+/** Credit the real killer on a death event; self-deathblows fall back to enemy attackers. */
+function resolveDeathKiller(death: any): DeathParty | null {
+  const victim = death?.victim?.character;
+  const deathblow = death?.deathblow as DeathParty | undefined;
+  const attackers: any[] = death?.attackers || [];
+
+  if (deathblow?.id != null && victim?.id != null && String(deathblow.id) !== String(victim.id)) {
+    return deathblow;
+  }
+
+  if (victim?.id != null) {
+    const enemy = attackers.find((a) => {
+      const c = a?.character;
+      return c?.id != null && String(c.id) !== String(victim.id);
+    });
+    if (enemy?.character) return enemy.character;
+  }
+
+  return deathblow?.id != null ? deathblow : null;
+}
+
+function resolveDeathKillerAttacker(death: any): any | null {
+  const killer = resolveDeathKiller(death);
+  if (!killer?.id) return null;
+  const attackers: any[] = death?.attackers || [];
+  return attackers.find((a) => String(a?.character?.id) === String(killer.id)) ?? null;
+}
+
 export async function gql<T = any>(query: string, variables?: Record<string, any>, opts?: { signal?: AbortSignal }): Promise<T> {
   const res = await fetch(endpoint, {
     method: 'POST',
@@ -337,7 +367,7 @@ export async function fetchTopOpponents(
       const killsAgainst = new Map<string | number, number>();
       for (const k of killsRecent) { const vc = k?.victim?.character; if (!vc) continue; const key = vc.id; killsAgainst.set(key, (killsAgainst.get(key) || 0) + 1); }
       const deathsFrom = new Map<string | number, number>();
-      for (const d of deathsRecent) { const kb = d?.deathblow; if (!kb) continue; const key = kb.id; deathsFrom.set(key, (deathsFrom.get(key) || 0) + 1); }
+      for (const d of deathsRecent) { const kb = resolveDeathKiller(d); if (!kb?.id) continue; const key = kb.id; deathsFrom.set(key, (deathsFrom.get(key) || 0) + 1); }
 
       // Guild-level maps
       const victimGuildCounts = new Map<string | number, { id: string|number; name: string; count: number; realm?: string }>();
@@ -350,9 +380,8 @@ export async function fetchTopOpponents(
       }
       const killerGuildCounts = new Map<string | number, { id: string|number; name: string; count: number; realm?: string }>();
       for (const d of deathsRecent) {
-        const kb = d?.deathblow; if (!kb) continue; const attackers: any[] = d?.attackers || [];
-        const a = attackers.find(at => String(at?.character?.id) === String(kb.id));
-        const g = a?.guild; if (!g) continue; const key = g.id;
+        const kb = resolveDeathKiller(d); if (!kb?.id) continue;
+        const g = resolveDeathKillerAttacker(d)?.guild; if (!g) continue; const key = g.id;
         const prev = killerGuildCounts.get(key) || { id: key, name: g.name || 'Unknown Guild', realm: g.realm, count: 0 };
         prev.name = g.name || prev.name;
         prev.realm = g.realm || prev.realm;
@@ -367,7 +396,7 @@ export async function fetchTopOpponents(
       }
       const killerCareerCounts = new Map<string, { career: string; count: number }>();
       for (const d of deathsRecent) {
-        const c = d?.deathblow?.career as string|undefined; if (!c) continue;
+        const c = resolveDeathKiller(d)?.career as string|undefined; if (!c) continue;
         const prev = killerCareerCounts.get(c) || { career: c, count: 0 }; prev.count++; killerCareerCounts.set(c, prev);
       }
       const victims = Array.from(killsAgainst.entries()).map(([key,cnt]) => {
@@ -378,9 +407,10 @@ export async function fetchTopOpponents(
         return { id: key, name, career, count: cnt, diff } as Opponent;
       }).sort((a,b)=> b.count - a.count).slice(0, maxList);
       const killers = Array.from(deathsFrom.entries()).map(([key,cnt]) => {
-        const anyDeath = deathsRecent.find(x => String(x?.deathblow?.id) === String(key));
-        const name = anyDeath?.deathblow?.name || 'Unknown';
-        const career = anyDeath?.deathblow?.career;
+        const anyDeath = deathsRecent.find(x => { const k = resolveDeathKiller(x); return k && String(k.id) === String(key); });
+        const kb = anyDeath ? resolveDeathKiller(anyDeath) : null;
+        const name = kb?.name || 'Unknown';
+        const career = kb?.career;
         const diff = (killsAgainst.get(key) || 0) - cnt;
         return { id: key, name, career, count: cnt, diff } as Opponent;
       }).sort((a,b)=> b.count - a.count).slice(0, maxList);
@@ -669,18 +699,18 @@ export async function fetchTopOpponents(
 
   const countVictims = () => {
     const killsAgainst = new Map<string|number,number>(); for(const k of killsRecent){ const vc=k?.victim?.character; if(!vc) continue; const key=vc.id; killsAgainst.set(key,(killsAgainst.get(key)||0)+1); }
-    const deathsFrom = new Map<string|number,number>(); for(const d of deathsRecent){ const kb=d?.deathblow; if(!kb) continue; const key=kb.id; deathsFrom.set(key,(deathsFrom.get(key)||0)+1); }
+    const deathsFrom = new Map<string|number,number>(); for(const d of deathsRecent){ const kb=resolveDeathKiller(d); if(!kb?.id) continue; const key=kb.id; deathsFrom.set(key,(deathsFrom.get(key)||0)+1); }
     const arr: Opponent[] = []; for(const [key,cnt] of killsAgainst.entries()){ const anyKill=killsRecent.find(x=>String(x?.victim?.character?.id)===String(key)); const name=anyKill?.victim?.character?.name||'Unknown'; const career=anyKill?.victim?.character?.career; const diff=cnt-(deathsFrom.get(key)||0); arr.push({ id:key, name, career, count:cnt, diff}); } return arr.sort((a,b)=>b.count-a.count).slice(0,maxList);
   };
   const countKillers = () => {
-    const deathsFrom = new Map<string|number,number>(); for(const d of deathsRecent){ const kb=d?.deathblow; if(!kb) continue; const key=kb.id; deathsFrom.set(key,(deathsFrom.get(key)||0)+1); }
+    const deathsFrom = new Map<string|number,number>(); for(const d of deathsRecent){ const kb=resolveDeathKiller(d); if(!kb?.id) continue; const key=kb.id; deathsFrom.set(key,(deathsFrom.get(key)||0)+1); }
     const killsAgainst = new Map<string|number,number>(); for(const k of killsRecent){ const vc=k?.victim?.character; if(!vc) continue; const key=vc.id; killsAgainst.set(key,(killsAgainst.get(key)||0)+1); }
-    const arr: Opponent[] = []; for(const [key,cnt] of deathsFrom.entries()){ const anyDeath=deathsRecent.find(x=>String(x?.deathblow?.id)===String(key)); const name=anyDeath?.deathblow?.name||'Unknown'; const career=anyDeath?.deathblow?.career; const diff=(killsAgainst.get(key)||0)-cnt; arr.push({ id:key, name, career, count:cnt, diff}); } return arr.sort((a,b)=>b.count-a.count).slice(0,maxList);
+    const arr: Opponent[] = []; for(const [key,cnt] of deathsFrom.entries()){ const anyDeath=deathsRecent.find(x=>{ const k=resolveDeathKiller(x); return k && String(k.id)===String(key); }); const kb=anyDeath?resolveDeathKiller(anyDeath):null; const name=kb?.name||'Unknown'; const career=kb?.career; const diff=(killsAgainst.get(key)||0)-cnt; arr.push({ id:key, name, career, count:cnt, diff}); } return arr.sort((a,b)=>b.count-a.count).slice(0,maxList);
   };
   const countVictimGuilds = () => { const m=new Map<string|number,TopGuild>(); for(const k of killsRecent){ const g=k?.victim?.guild; if(!g) continue; const key=g.id; const cur=m.get(key)||{id:key,name:g.name||'Unknown Guild',count:0}; cur.count++; m.set(key,cur);} return Array.from(m.values()).sort((a,b)=>b.count-a.count).slice(0,maxList); };
   const countVictimCareers = () => { const m=new Map<string,TopCareer>(); for(const k of killsRecent){ const c=k?.victim?.character?.career as string|undefined; if(!c) continue; const cur=m.get(c)||{career:c,count:0}; cur.count++; m.set(c,cur);} return Array.from(m.values()).sort((a,b)=>b.count-a.count).slice(0,maxList); };
-  const countKillerGuilds = () => { const m: Map<any, any> = new Map(); for(const d of deathsRecent){ const kb=d?.deathblow; if(!kb) continue; const attackers: any[] = d?.attackers || []; const a=attackers.find(at=>String(at?.character?.id)===String(kb.id)); const g=a?.guild; if(!g) continue; const key=g.id; let cur=m.get(key); if(!cur){ cur={ id:key, name:g.name||'Unknown Guild', count:0 }; m.set(key,cur);} cur.count++; } return Array.from(m.values()).sort((a,b)=>b.count-a.count).slice(0,maxList); };
-  const countKillerCareers = () => { const m=new Map<string,TopCareer>(); for(const d of deathsRecent){ const kb=d?.deathblow; if(!kb) continue; const c=kb.career as string|undefined; if(!c) continue; const cur=m.get(c)||{career:c,count:0}; cur.count++; m.set(c,cur);} return Array.from(m.values()).sort((a,b)=>b.count-a.count).slice(0,maxList); };
+  const countKillerGuilds = () => { const m: Map<any, any> = new Map(); for(const d of deathsRecent){ const kb=resolveDeathKiller(d); if(!kb?.id) continue; const g=resolveDeathKillerAttacker(d)?.guild; if(!g) continue; const key=g.id; let cur=m.get(key); if(!cur){ cur={ id:key, name:g.name||'Unknown Guild', count:0 }; m.set(key,cur);} cur.count++; } return Array.from(m.values()).sort((a,b)=>b.count-a.count).slice(0,maxList); };
+  const countKillerCareers = () => { const m=new Map<string,TopCareer>(); for(const d of deathsRecent){ const kb=resolveDeathKiller(d); if(!kb?.id) continue; const c=kb.career as string|undefined; if(!c) continue; const cur=m.get(c)||{career:c,count:0}; cur.count++; m.set(c,cur);} return Array.from(m.values()).sort((a,b)=>b.count-a.count).slice(0,maxList); };
 
   return {
     victims: countVictims(),
@@ -790,7 +820,7 @@ export async function fetchTopOpponentsForGuild(
     const killsAgainst = new Map<string | number, number>();
     for (const k of killsArr) { const vc = k?.victim?.character; if (!vc) continue; const key = vc.id; killsAgainst.set(key, (killsAgainst.get(key) || 0) + 1); }
     const deathsFrom = new Map<string | number, number>();
-    for (const d of deathsArr) { const kb = d?.deathblow; if (!kb) continue; const key = kb.id; deathsFrom.set(key, (deathsFrom.get(key) || 0) + 1); }
+    for (const d of deathsArr) { const kb = resolveDeathKiller(d); if (!kb?.id) continue; const key = kb.id; deathsFrom.set(key, (deathsFrom.get(key) || 0) + 1); }
     // Member tallies (by deathblow for kills, by victim for deaths)
     const memberKillCounts = new Map<string | number, { id: string|number; name: string; career?: string; count: number }>();
     const guildIdStr = String(id);
@@ -810,11 +840,11 @@ export async function fetchTopOpponentsForGuild(
     const victimGuildCounts = new Map<string | number, { id: string|number; name: string; count: number; realm?: string }>();
     for (const k of killsArr) { const g = k?.victim?.guild; if (!g) continue; const key = g.id; const prev = victimGuildCounts.get(key) || { id: key, name: g.name || 'Unknown Guild', realm: g.realm, count: 0 }; prev.name=g.name||prev.name; prev.realm=g.realm||prev.realm; prev.count++; victimGuildCounts.set(key, prev); }
     const killerGuildCounts = new Map<string | number, { id: string|number; name: string; count: number; realm?: string }>();
-    for (const d of deathsArr) { const kb = d?.deathblow; if (!kb) continue; const attackers: any[] = d?.attackers || []; const a = attackers.find(at => String(at?.character?.id) === String(kb.id)); const g = a?.guild; if (!g) continue; const key = g.id; const prev = killerGuildCounts.get(key) || { id: key, name: g.name || 'Unknown Guild', realm: g.realm, count: 0 }; prev.name=g.name||prev.name; prev.realm=g.realm||prev.realm; prev.count++; killerGuildCounts.set(key, prev); }
+    for (const d of deathsArr) { const kb = resolveDeathKiller(d); if (!kb?.id) continue; const g = resolveDeathKillerAttacker(d)?.guild; if (!g) continue; const key = g.id; const prev = killerGuildCounts.get(key) || { id: key, name: g.name || 'Unknown Guild', realm: g.realm, count: 0 }; prev.name=g.name||prev.name; prev.realm=g.realm||prev.realm; prev.count++; killerGuildCounts.set(key, prev); }
     const victimCareerCounts = new Map<string, { career: string; count: number }>();
     for (const k of killsArr) { const c = k?.victim?.character?.career as string|undefined; if (!c) continue; const prev = victimCareerCounts.get(c) || { career: c, count: 0 }; prev.count++; victimCareerCounts.set(c, prev); }
     const killerCareerCounts = new Map<string, { career: string; count: number }>();
-    for (const d of deathsArr) { const c = d?.deathblow?.career as string|undefined; if (!c) continue; const prev = killerCareerCounts.get(c) || { career: c, count: 0 }; prev.count++; killerCareerCounts.set(c, prev); }
+    for (const d of deathsArr) { const c = resolveDeathKiller(d)?.career as string|undefined; if (!c) continue; const prev = killerCareerCounts.get(c) || { career: c, count: 0 }; prev.count++; killerCareerCounts.set(c, prev); }
     const victims: Opponent[] = Array.from(killsAgainst.entries()).map(([key,cnt]) => {
       const anyKill = killsArr.find(x => String(x?.victim?.character?.id) === String(key));
       const name = anyKill?.victim?.character?.name || 'Unknown';
@@ -823,9 +853,10 @@ export async function fetchTopOpponentsForGuild(
       return { id: key, name, career, count: cnt, diff } as Opponent;
     }).sort((a,b)=> b.count - a.count).slice(0, maxList);
     const killers: Opponent[] = Array.from(deathsFrom.entries()).map(([key,cnt]) => {
-      const anyDeath = deathsArr.find(x => String(x?.deathblow?.id) === String(key));
-      const name = anyDeath?.deathblow?.name || 'Unknown';
-      const career = anyDeath?.deathblow?.career;
+      const anyDeath = deathsArr.find(x => { const k = resolveDeathKiller(x); return k && String(k.id) === String(key); });
+      const kb = anyDeath ? resolveDeathKiller(anyDeath) : null;
+      const name = kb?.name || 'Unknown';
+      const career = kb?.career;
       const diff = (killsAgainst.get(key) || 0) - cnt;
       return { id: key, name, career, count: cnt, diff } as Opponent;
     }).sort((a,b)=> b.count - a.count).slice(0, maxList);
