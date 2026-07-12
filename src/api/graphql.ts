@@ -1,5 +1,9 @@
 export const endpoint = 'https://production-api.waremu.com/graphql/';
 
+function secToIso(sec: number): string {
+  return new Date(sec * 1000).toISOString();
+}
+
 export async function gql<T = any>(query: string, variables?: Record<string, any>, opts?: { signal?: AbortSignal }): Promise<T> {
   const res = await fetch(endpoint, {
     method: 'POST',
@@ -241,14 +245,14 @@ export async function resolveGuildByName(name: string, options?: { signal?: Abor
 // Fetch lifetime totals for a single character id
 export async function fetchLifetimeTotalsFor(id: number | string, options?: { signal?: AbortSignal }): Promise<{ kills: number; deaths: number; kd: number; scenarioWins: number; scenarioLosses: number }> {
   const query = `
-    query Lifetime($id: UnsignedInt!, $idStr: ID!){
+    query Lifetime($id: ID!){
       byKills: kills(first:1, where:{ killerCharacterId:{ eq:$id } }){ totalCount }
       byDeaths: kills(first:1, where:{ victimCharacterId:{ eq:$id } }){ totalCount }
-      wins: scenarios(first:1, characterId: $idStr, wins: true){ totalCount }
-      losses: scenarios(first:1, characterId: $idStr, wins: false){ totalCount }
+      wins: scenarios(first:1, characterId: $id, wins: true){ totalCount }
+      losses: scenarios(first:1, characterId: $id, wins: false){ totalCount }
     }
   `;
-  const data = await gql<any>(query, { id: Number(id), idStr: String(id) }, { signal: options?.signal });
+  const data = await gql<any>(query, { id: String(id) }, { signal: options?.signal });
   const kills = data?.byKills?.totalCount ?? 0;
   const deaths = data?.byDeaths?.totalCount ?? 0;
   const wins = data?.wins?.totalCount ?? 0;
@@ -292,7 +296,7 @@ export async function fetchTopOpponents(
   type KDPage = { killsRecent: { nodes: any[]; pageInfo: { hasNextPage: boolean; endCursor?: string }; totalCount: number }; deathsRecent: { nodes: any[]; pageInfo: { hasNextPage: boolean; endCursor?: string }; totalCount: number } };
   async function fetchKDPage(first: number, afterK?: string, afterD?: string, fromOverride?: number, toOverride?: number): Promise<KDPage> {
     const query = `
-      query KD($id: UnsignedInt!, $from: Int!, $to: Int!, $first: Int!, $afterK: String, $afterD: String) {
+      query KD($id: ID!, $from: DateTime!, $to: DateTime!, $first: Int!, $afterK: String, $afterD: String) {
         killsRecent: kills(first: $first, after: $afterK, where: { time: { gte: $from, lte: $to }, killerCharacterId: { eq: $id } }) {
           totalCount
           pageInfo { hasNextPage endCursor }
@@ -305,7 +309,9 @@ export async function fetchTopOpponents(
         }
       }
     `;
-  const data = await gql<any>(query, { id: Number(id), from: (fromOverride ?? fromSec) ?? 0, to: (toOverride ?? toSec) ?? Math.floor(Date.now()/1000), first, afterK, afterD }, { signal: opts.signal });
+  const from = secToIso((fromOverride ?? fromSec) ?? 0);
+  const to = secToIso((toOverride ?? toSec) ?? Math.floor(Date.now()/1000));
+  const data = await gql<any>(query, { id: String(id), from, to, first, afterK, afterD }, { signal: opts.signal });
     return {
       killsRecent: { nodes: data?.killsRecent?.nodes || [], pageInfo: data?.killsRecent?.pageInfo || { hasNextPage: false }, totalCount: data?.killsRecent?.totalCount ?? 0 },
       deathsRecent: { nodes: data?.deathsRecent?.nodes || [], pageInfo: data?.deathsRecent?.pageInfo || { hasNextPage: false }, totalCount: data?.deathsRecent?.totalCount ?? 0 }
@@ -412,6 +418,7 @@ export async function fetchTopOpponents(
 
   // Begin scenario W/L machinery (optional)
   let scenarioWins = 0, scenarioLosses = 0;
+  
   // Also collect scenario ids directly from scenarios(...) for the character in the same window to include runs with zero K/D
   async function collectScenarioIdsFromList(): Promise<Set<string>>{
     const set = new Set<string>();
@@ -473,7 +480,7 @@ export async function fetchTopOpponents(
         if (!Number.isNaN(pt)) playerTeam = pt; else if (typeof opts.realm === 'number') playerTeam = opts.realm;
         if (playerTeam != null){ if (playerTeam === winnerTeam) wInc++; else lInc++; }
       }
-  scenarioWins += wInc; scenarioLosses += lInc;
+      scenarioWins += wInc; scenarioLosses += lInc;
       scenarioPagesCounter += 1; // count batches processed as pages for progress
       emitProgress({ wins: scenarioWins, losses: scenarioLosses });
     }
@@ -719,7 +726,7 @@ export async function fetchTopOpponentsForGuild(
   type KDPage = { killsRecent: { nodes: any[]; pageInfo: { hasNextPage: boolean; endCursor?: string }; totalCount: number }; deathsRecent: { nodes: any[]; pageInfo: { hasNextPage: boolean; endCursor?: string }; totalCount: number } };
   async function fetchKDPage(first: number, afterK?: string, afterD?: string): Promise<KDPage> {
     const query = `
-      query KD($id: UnsignedInt!, $from: Int!, $to: Int!, $first: Int!, $afterK: String, $afterD: String) {
+      query KD($id: ID!, $from: DateTime!, $to: DateTime!, $first: Int!, $afterK: String, $afterD: String) {
         killsRecent: kills(first: $first, after: $afterK, where: { time: { gte: $from, lte: $to }, killerGuildId: { eq: $id } }) {
           totalCount
           pageInfo { hasNextPage endCursor }
@@ -732,7 +739,7 @@ export async function fetchTopOpponentsForGuild(
         }
       }
     `;
-    const data = await gql<any>(query, { id: Number(id), from: Math.floor(fromSec ?? 0), to: Math.floor(toSec ?? Date.now()/1000), first, afterK, afterD }, { signal: opts.signal });
+    const data = await gql<any>(query, { id: String(id), from: secToIso(fromSec ?? 0), to: secToIso(toSec ?? Math.floor(Date.now()/1000)), first, afterK, afterD }, { signal: opts.signal });
     return {
       killsRecent: { nodes: data?.killsRecent?.nodes || [], pageInfo: data?.killsRecent?.pageInfo || { hasNextPage: false }, totalCount: data?.killsRecent?.totalCount ?? 0 },
       deathsRecent: { nodes: data?.deathsRecent?.nodes || [], pageInfo: data?.deathsRecent?.pageInfo || { hasNextPage: false }, totalCount: data?.deathsRecent?.totalCount ?? 0 }
@@ -849,22 +856,22 @@ export async function fetchTopOpponentsForGuild(
 // Lightweight totals-only fetch for a character within a [from,to] seconds window.
 export async function fetchKdTotalsForRange(id: number | string, fromSec: number, toSec: number, options?: { signal?: AbortSignal }): Promise<{ kills: number; deaths: number }> {
   const query = `
-    query KdTotals($id: UnsignedInt!, $from: Int!, $to: Int!) {
+    query KdTotals($id: ID!, $from: DateTime!, $to: DateTime!) {
       k: kills(first: 1, where: { time: { gte: $from, lte: $to }, killerCharacterId: { eq: $id } }) { totalCount }
       d: kills(first: 1, where: { time: { gte: $from, lte: $to }, victimCharacterId: { eq: $id } }) { totalCount }
     }
   `;
-  const data = await gql<any>(query, { id: Number(id), from: Math.floor(fromSec), to: Math.floor(toSec) }, { signal: options?.signal });
+  const data = await gql<any>(query, { id: String(id), from: secToIso(fromSec), to: secToIso(toSec) }, { signal: options?.signal });
   return { kills: data?.k?.totalCount ?? 0, deaths: data?.d?.totalCount ?? 0 };
 }
 
 // Fetch lifetime solo kills for a character (across all time)
 export async function fetchLifetimeSoloKills(id: number | string, options?: { signal?: AbortSignal }): Promise<number> {
   const query = `
-    query LifetimeSolo($id: UnsignedInt!) {
+    query LifetimeSolo($id: ID!) {
       s: kills(first: 1, soloOnly: true, where: { killerCharacterId: { eq: $id } }) { totalCount }
     }
   `;
-  const data = await gql<any>(query, { id: Number(id) }, { signal: options?.signal });
+  const data = await gql<any>(query, { id: String(id) }, { signal: options?.signal });
   return data?.s?.totalCount ?? 0;
 }

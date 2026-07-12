@@ -416,16 +416,14 @@ async function openScoreSheet(charId: number, name: string, careerHint?: string)
     // Fetch solo kills for the period using GraphQL kills(soloOnly: true) totalCount
     (async () => {
       try {
-        const fromTs = Math.floor(new Date(fromIso).getTime() / 1000);
-        const toTs = Math.floor(new Date(toIso).getTime() / 1000);
         const SOLO_QUERY = `
-          query SoloKills($cid: UnsignedInt!, $from: Int!, $to: Int!) {
+          query SoloKills($cid: ID!, $from: DateTime!, $to: DateTime!) {
             kills(soloOnly: true, where: { killerCharacterId: { eq: $cid }, time: { gte: $from, lt: $to } }) {
               totalCount
             }
           }
         `;
-        const data = await gql<any>(SOLO_QUERY, { cid: Number(charId), from: fromTs, to: toTs }, { signal: currentModalAbort?.signal });
+        const data = await gql<any>(SOLO_QUERY, { cid: String(charId), from: fromIso, to: toIso }, { signal: currentModalAbort?.signal });
         if (modalSessionId !== currentModalSessionId) return; if (myGen !== __modalRenderGen) return;
         const solo = Number(data?.kills?.totalCount ?? 0);
         periodSoloCount = solo;
@@ -636,15 +634,13 @@ async function openGuildScoreSheet(guildId: number, name: string, realmHint?: st
 
     // Fetch guild period K/D totals
     try {
-      const fromTs = Math.floor(new Date(fromIso).getTime() / 1000);
-      const toTs = Math.floor(new Date(toIso).getTime() / 1000);
       const GKD_QUERY = `
-        query GuildKd($gid: UnsignedInt!, $from: Int!, $to: Int!) {
+        query GuildKd($gid: ID!, $from: DateTime!, $to: DateTime!) {
           k: kills(first: 1, where: { killerGuildId: { eq: $gid }, time: { gte: $from, lt: $to } }) { totalCount }
           d: kills(first: 1, where: { victimGuildId: { eq: $gid }, time: { gte: $from, lt: $to } }) { totalCount }
         }
       `;
-      const data = await gql<any>(GKD_QUERY, { gid: Number(guildId), from: fromTs, to: toTs }, { signal: currentModalAbort?.signal });
+      const data = await gql<any>(GKD_QUERY, { gid: String(guildId), from: fromIso, to: toIso }, { signal: currentModalAbort?.signal });
       if (modalSessionId !== currentModalSessionId) return; if (myGen !== __modalRenderGen) return;
       const k = Number(data?.k?.totalCount ?? 0);
       const d = Number(data?.d?.totalCount ?? 0);
